@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#1d1936" />
 <title>Our Apartment · Alex & Rose</title>
 <style>
   :root {
@@ -14,10 +16,9 @@
     --line: #3a325a;
     --accent: #ffd166;
     --pink: #ff8aa8;
-    --rose: #d63b6c;
     --teal: #6cdac6;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     margin: 0; padding: 0;
     background: radial-gradient(1200px 800px at 70% -10%, #4a3a8a 0%, #1d1936 60%) no-repeat fixed;
@@ -27,250 +28,226 @@
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
   }
   #wrap {
-    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
-    padding: 14px 12px;
+    min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 8px;
   }
   #titlebar {
     width: 100%; max-width: 820px;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 4px 8px 10px;
+    padding: 4px 6px 8px;
+    flex-shrink: 0;
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
   .brand .heart { color: var(--pink); }
-  .brand small { font-weight: 500; color: var(--muted); margin-left: 6px; font-size: 12px; }
-  #help-toggle {
+  .brand small { font-weight: 500; color: var(--muted); margin-left: 4px; font-size: 12px; }
+  .topbtns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .topbtn {
     background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted);
-    border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12px; cursor: pointer;
+    border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12px; cursor: pointer;
+    font-weight: 600; transition: color .15s, background .15s, border-color .15s;
   }
-  #help-toggle:hover { color: var(--ink); }
+  .topbtn:hover, .topbtn:active { color: var(--ink); background: rgba(255,255,255,0.1); }
 
   #stage {
     position: relative; width: 800px; max-width: 100%;
     border-radius: 16px; overflow: hidden;
     box-shadow: 0 30px 80px -30px rgba(0,0,0,0.7), 0 0 0 1px var(--line);
     background: #0e0c1c;
+    aspect-ratio: 800 / 576;
   }
   #stage canvas {
-    display: block; width: 100%; height: auto; image-rendering: pixelated;
+    display: block; width: 100%; height: 100%; image-rendering: pixelated;
   }
 
   #hud {
-    position: absolute; top: 10px; left: 12px; right: 12px;
+    position: absolute; top: 8px; left: 10px; right: 10px;
     display: flex; align-items: center; justify-content: space-between;
-    pointer-events: none;
+    pointer-events: none; gap: 8px;
     font-size: 13px;
   }
   .hud-pill {
     background: rgba(20,16,40,0.78);
     border: 1px solid rgba(255,255,255,0.08);
     color: var(--ink);
-    padding: 6px 12px; border-radius: 999px;
+    padding: 5px 11px; border-radius: 999px;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    display: inline-flex; align-items: center; gap: 8px;
-    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 600; font-size: 12px;
   }
   .hud-pill .room { color: var(--muted); font-weight: 500; }
-  .hud-pill .swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-  .hud-pill .swatch.alex { background: #f3d27a; }
-  .hud-pill .swatch.rose { background: #4a2238; }
+  .hud-pill .swatch { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
   .hud-pill .heart { color: var(--pink); }
+  .hud-pill.build-active { background: rgba(255, 209, 102, 0.2); border-color: var(--accent); color: var(--accent); }
 
   #prompt {
-    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%);
     background: rgba(20,16,40,0.85);
     border: 1px solid rgba(255,255,255,0.08);
     color: var(--ink);
-    padding: 8px 14px; border-radius: 999px;
-    font-size: 13px; font-weight: 600;
+    padding: 6px 13px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
     pointer-events: none;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     opacity: 0; transition: opacity .15s ease;
+    white-space: nowrap;
   }
   #prompt.show { opacity: 1; }
   #prompt kbd {
     background: rgba(255,255,255,0.12);
-    border-radius: 5px; padding: 2px 6px; font-size: 11px; font-weight: 700;
-    margin-right: 6px; font-family: ui-monospace, monospace;
+    border-radius: 5px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+    margin-right: 5px; font-family: ui-monospace, monospace;
   }
 
-  #help {
+  /* TOUCH CONTROLS */
+  #touch-controls { position: absolute; inset: 0; pointer-events: none; }
+  #stick-area { position: absolute; bottom: 0; left: 0; width: 50%; height: 60%; pointer-events: auto; }
+  #stick {
+    position: absolute; width: 110px; height: 110px;
+    border-radius: 50%; background: rgba(20,16,40,0.4);
+    border: 2px solid rgba(255,255,255,0.18);
+    pointer-events: none; display: none;
+  }
+  #stick.show { display: block; }
+  #stick-knob {
+    position: absolute; width: 50px; height: 50px;
+    border-radius: 50%; background: rgba(255,209,102,0.6);
+    border: 2px solid rgba(255,255,255,0.6);
+    left: 50%; top: 50%; transform: translate(-50%,-50%);
+    transition: transform .04s linear;
+  }
+  #action-bar {
+    position: absolute; bottom: 8px; right: 8px;
+    display: grid; grid-template-columns: repeat(2, 50px); gap: 6px;
+    pointer-events: auto;
+  }
+  .abtn {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: rgba(20,16,40,0.78);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: var(--ink); font: inherit; font-weight: 700; font-size: 18px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    transition: transform .05s, background .15s;
+  }
+  .abtn:active { transform: scale(0.92); background: rgba(255,209,102,0.3); }
+  .abtn.primary { background: rgba(255,209,102,0.85); color: #2a1a05; border-color: var(--accent); }
+  .abtn.tiny { font-size: 14px; }
+
+  /* MODALS */
+  .modal {
     position: absolute; inset: 0; background: rgba(8,6,16,0.86);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     display: none; align-items: center; justify-content: center;
-    padding: 24px;
+    padding: 20px; z-index: 20;
   }
-  #help.show { display: flex; }
-  #help .panel {
+  .modal.show { display: flex; }
+  .modal-panel {
     background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
-    padding: 24px 26px; max-width: 560px; width: 100%;
-    line-height: 1.55;
+    padding: 18px 18px 16px; max-width: 540px; width: 100%;
+    line-height: 1.5; max-height: 90%; overflow-y: auto;
+    pointer-events: auto;
   }
-  #help h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: -0.01em; }
-  #help p { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
-  #help table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  #help td { padding: 5px 0; vertical-align: top; }
-  #help td.k { color: var(--accent); font-weight: 700; width: 130px; font-family: ui-monospace, monospace; font-size: 12px; }
-  #help .close {
-    margin-top: 14px; background: var(--accent); color: #2a1a05;
-    border: none; border-radius: 10px; padding: 10px 16px;
-    font: inherit; font-weight: 700; cursor: pointer;
+  .modal h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+  .modal .sub { color: var(--muted); margin: 0 0 14px; font-size: 13px; }
+  .modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .modal td { padding: 4px 0; vertical-align: top; }
+  .modal td.k { color: var(--accent); font-weight: 700; width: 130px; font-family: ui-monospace, monospace; font-size: 11px; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .modal button.primary {
+    background: var(--accent); color: #2a1a05;
+    border: none; border-radius: 10px; padding: 9px 14px;
+    font: inherit; font-weight: 700; cursor: pointer; font-size: 14px;
+  }
+  .modal button.ghost {
+    background: transparent; color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 9px 14px; font: inherit; font-weight: 600; cursor: pointer; font-size: 14px;
   }
 
+  /* WARDROBE */
+  .wardrobe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .who-card {
+    background: rgba(0,0,0,0.2); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px;
+  }
+  .who-card h3 { margin: 0 0 8px; font-size: 14px; }
+  .who-card .preview {
+    width: 100%; aspect-ratio: 1; background: rgba(255,255,255,0.04);
+    border-radius: 10px; margin-bottom: 8px;
+  }
+  .opt-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 6px 0 4px; }
+  .swatches { display: flex; gap: 5px; flex-wrap: wrap; }
+  .sw {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 2px solid transparent; cursor: pointer;
+    transition: transform .1s, border-color .15s;
+  }
+  .sw:active { transform: scale(0.92); }
+  .sw.active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,209,102,0.3); }
+
+  /* CATALOGUE */
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .cat-item {
+    background: rgba(0,0,0,0.2); border: 1px solid var(--line);
+    border-radius: 12px; padding: 10px; text-align: center;
+  }
+  .cat-item .preview {
+    width: 80px; height: 60px; margin: 0 auto 6px; background: #fbf3e3;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .cat-item .name { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  .cat-item .price { color: var(--accent); font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+  .cat-item .price::before { content: "♥ "; }
+  .cat-item button {
+    background: var(--accent); color: #2a1a05;
+    border: none; border-radius: 6px; padding: 5px 10px;
+    font: inherit; font-weight: 700; cursor: pointer; font-size: 11px;
+    width: 100%;
+  }
+  .cat-item button:disabled { background: rgba(255,255,255,0.1); color: var(--muted); cursor: not-allowed; }
+
+  /* TITLE */
   #title-screen {
     position: absolute; inset: 0; background: linear-gradient(180deg, #2a2055 0%, #1a1638 100%);
     display: flex; align-items: center; justify-content: center; text-align: center;
-    padding: 24px;
+    padding: 16px; z-index: 30;
   }
   #title-screen.hidden { display: none; }
-  #title-screen .inner { max-width: 480px; }
-  #title-screen h1 { font-size: 36px; margin: 0 0 6px; letter-spacing: -0.02em; }
-  #title-screen .sub { color: var(--muted); margin-bottom: 18px; font-size: 14px; }
+  #title-screen .inner { max-width: 460px; }
+  #title-screen h1 { font-size: 32px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  #title-screen .sub { color: var(--muted); margin-bottom: 14px; font-size: 13px; }
   #title-screen .pair {
-    display: flex; justify-content: center; align-items: end; gap: 18px; margin: 18px 0 22px;
+    display: flex; justify-content: center; align-items: end; gap: 14px; margin: 12px 0 18px;
   }
-  #title-screen .who { text-align: center; font-size: 13px; color: var(--muted); }
-  #title-screen .who .name { color: var(--ink); font-weight: 700; font-size: 16px; margin-top: 6px; }
+  #title-screen .who { text-align: center; font-size: 12px; color: var(--muted); }
+  #title-screen .who .name { color: var(--ink); font-weight: 700; font-size: 14px; margin-top: 4px; }
   #title-screen button {
     background: var(--accent); color: #2a1a05;
     border: none; border-radius: 12px; padding: 12px 22px;
     font: inherit; font-weight: 700; cursor: pointer; font-size: 16px;
     box-shadow: 0 10px 30px -10px rgba(255, 209, 102, 0.4);
   }
-  #title-screen .hint { color: var(--muted); font-size: 12px; margin-top: 14px; }
+  #title-screen .hint { color: var(--muted); font-size: 11px; margin-top: 12px; }
 
-  footer { color: var(--muted); font-size: 11px; margin-top: 12px; opacity: 0.6; }
-
-  /* Build mode + catalogue */
-  #build-panel {
-    position: absolute; top: 0; right: 0; bottom: 0; width: 280px;
-    background: rgba(20,16,40,0.95); border-left: 1px solid var(--line);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    transform: translateX(100%); transition: transform .25s ease;
-    display: flex; flex-direction: column; color: var(--ink);
-    z-index: 10;
-  }
-  #build-panel.show { transform: translateX(0); }
-  .build-head {
-    padding: 12px 14px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .build-head h3 { margin: 0; font-size: 16px; }
-  .build-head .close-x {
-    background: transparent; color: var(--muted); border: none;
-    font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
-  }
-  .build-tabs { display: flex; gap: 2px; padding: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
-  .build-tabs button {
-    background: rgba(255,255,255,0.05); color: var(--muted);
-    border: none; border-radius: 7px; padding: 6px 9px;
-    font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
-  }
-  .build-tabs button.active { background: var(--accent); color: #2a1a05; }
-  .build-list {
-    flex: 1; overflow-y: auto; padding: 10px;
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-  }
-  .build-item {
-    background: rgba(255,255,255,0.04); border: 1px solid var(--line);
-    border-radius: 8px; padding: 8px 6px; text-align: center;
-    cursor: pointer; transition: background .12s ease, border-color .12s ease, transform .05s ease;
-  }
-  .build-item:active { transform: scale(0.97); }
-  .build-item:hover { background: rgba(255,255,255,0.08); border-color: var(--accent); }
-  .build-item.locked { opacity: 0.45; cursor: not-allowed; }
-  .build-item canvas { display: block; margin: 0 auto 4px; image-rendering: pixelated; }
-  .build-item .name { font-size: 11px; font-weight: 700; }
-  .build-item .cost { font-size: 10px; color: var(--accent); margin-top: 2px; }
-  .build-foot {
-    padding: 10px 12px; border-top: 1px solid var(--line);
-    font-size: 12px; color: var(--muted); line-height: 1.45;
-  }
-  .build-foot .pip { color: var(--pink); font-weight: 700; }
-
-  /* Build mode banner */
-  #build-banner {
-    position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
-    background: var(--accent); color: #2a1a05;
-    padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
-    display: none; z-index: 9; box-shadow: 0 4px 16px -4px rgba(255, 209, 102, 0.4);
-  }
-  #build-banner.show { display: block; }
-  #build-banner button {
-    background: rgba(0,0,0,0.15); color: #2a1a05; border: none;
-    padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;
-    margin-left: 8px; cursor: pointer;
-  }
-
-  /* Mobile controls — bigger, friendlier */
-  #touch-controls {
-    display: none;
-    grid-template-columns: 184px 1fr;
-    gap: 14px; padding: 14px 12px 6px;
-    width: 100%; max-width: 820px; margin: 8px auto 0;
-    align-items: stretch;
-  }
-  #dpad { position: relative; width: 168px; height: 168px; margin: 0 auto; }
-  #dpad button {
-    position: absolute; width: 56px; height: 56px;
-    background: rgba(255,255,255,0.14); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 14px;
-    font-size: 22px; font-weight: 800; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    touch-action: none; user-select: none; -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    transition: background .1s ease, transform .05s ease;
-  }
-  #dpad button.up    { top: 0;    left: 56px; }
-  #dpad button.down  { bottom: 0; left: 56px; }
-  #dpad button.left  { top: 56px; left: 0; }
-  #dpad button.right { top: 56px; right: 0; }
-  #dpad button:active, #dpad button.pressed {
-    background: var(--accent); color: #2a1a05; transform: scale(0.94);
-  }
-  #action-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 6px; align-content: start;
-  }
-  #action-grid button {
-    background: rgba(255,255,255,0.12); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 14px;
-    padding: 6px 2px; min-height: 52px;
-    font: inherit; font-weight: 700; font-size: 11px;
-    cursor: pointer; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 2px;
-    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-    user-select: none; -webkit-user-select: none;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    transition: background .1s ease, transform .05s ease;
-  }
-  #action-grid button .icon { font-size: 20px; line-height: 1; }
-  #action-grid button .lbl  { font-size: 10px; opacity: 0.85; letter-spacing: 0.04em; }
-  #action-grid button.primary { background: var(--accent); color: #2a1a05; border-color: transparent; }
-  #action-grid button.pink    { background: var(--pink);   color: #2a0e15; border-color: transparent; }
-  #action-grid button.amber   { background: rgba(255,209,102,0.85); color: #2a1a05; border-color: transparent; }
-  #action-grid button:active  { transform: scale(0.96); }
-
-  @media (hover: none), (max-width: 720px) {
-    #touch-controls { display: grid; }
-  }
-  body.force-touch #touch-controls { display: grid; }
+  footer { color: var(--muted); font-size: 10px; margin-top: 6px; opacity: 0.6; text-align: center; }
 
   @media (max-width: 820px) {
-    #stage { width: 100%; }
     #titlebar .brand small { display: none; }
-    #build-panel { width: 240px; }
-    #help .panel { max-height: 80vh; overflow-y: auto; }
+    .brand { font-size: 15px; }
+    .topbtn { padding: 4px 8px; font-size: 11px; }
+    #stage { width: 100%; }
+    .modal-panel { padding: 14px; }
+    #title-screen h1 { font-size: 24px; }
   }
-  @media (max-width: 600px) {
-    #build-panel { width: 100%; }
-    #touch-controls { grid-template-columns: 1fr; gap: 10px; padding: 10px 8px 4px; }
-    #action-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
-    #action-grid button { min-height: 48px; }
+  @media (max-width: 480px) {
+    .topbtn { padding: 4px 7px; }
+    .topbtns .topbtn span.t { display: none; }
   }
 </style>
 </head>
@@ -278,42 +255,82 @@
 <div id="wrap">
   <div id="titlebar">
     <div class="brand">our apartment <span class="heart">♥</span><small>alex &amp; rose</small></div>
-    <button id="help-toggle">how to play</button>
+    <div class="topbtns">
+      <button class="topbtn" id="btn-wardrobe-top">👗<span class="t"> looks</span></button>
+      <button class="topbtn" id="btn-shop-top">🛒<span class="t"> shop</span></button>
+      <button class="topbtn" id="btn-build-top">🔨<span class="t"> build</span></button>
+      <button class="topbtn" id="btn-help-top">?</button>
+    </div>
   </div>
 
   <div id="stage">
     <canvas id="game" width="800" height="576"></canvas>
 
     <div id="hud">
-      <div class="hud-pill">
+      <div class="hud-pill" id="hud-active">
         <span class="swatch" id="active-swatch"></span>
         <span id="active-name">—</span>
         <span class="heart">♥</span>
         <span id="hearts">0</span>
       </div>
+      <div class="hud-pill build-active" id="hud-mode" style="display:none">build mode</div>
       <div class="hud-pill"><span class="room" id="room-name">—</span></div>
     </div>
 
     <div id="prompt"></div>
 
-    <div id="help">
-      <div class="panel">
+    <div id="touch-controls">
+      <div id="stick-area">
+        <div id="stick"><div id="stick-knob"></div></div>
+      </div>
+      <div id="action-bar">
+        <button class="abtn primary" id="btn-interact" title="Interact">A</button>
+        <button class="abtn tiny" id="btn-swap" title="Swap">⇄</button>
+        <button class="abtn tiny" id="btn-kiss" title="Kiss">♥</button>
+        <button class="abtn tiny" id="btn-sing" title="Sing">♫</button>
+        <button class="abtn tiny" id="btn-say" title="Say">💬</button>
+        <button class="abtn tiny" id="btn-rotate" title="Rotate" style="display:none">↻</button>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-help">
+      <div class="modal-panel">
         <h2>how to play</h2>
-        <p>This is your apartment. You're playing as Alex (blonde) by default. Rose (dark hair) wanders around doing her own thing — tap <kbd>Tab</kbd> to switch who you control. The other one becomes the NPC.</p>
+        <p class="sub">tab between alex (blonde) and rose (dark hair). the one you're not playing wanders around as an npc.</p>
         <table>
           <tr><td class="k">↑ ← ↓ → / WASD</td><td>walk</td></tr>
           <tr><td class="k">Space / E</td><td>interact with whatever you're standing next to</td></tr>
-          <tr><td class="k">Tab</td><td>switch between Alex &amp; Rose</td></tr>
-          <tr><td class="k">M</td><td>sing your song (Alex's lullaby / Rose's villain anthem)</td></tr>
-          <tr><td class="k">Q</td><td>say one of your classic lines</td></tr>
-          <tr><td class="k">K</td><td>kiss the other one (must be close)</td></tr>
-          <tr><td class="k">H</td><td>heart-bomb the other one (cheesy)</td></tr>
-          <tr><td class="k">B</td><td>build mode — buy &amp; place furniture, move things around</td></tr>
-          <tr><td class="k">X</td><td>delete the selected piece (in build mode)</td></tr>
-          <tr><td class="k">Esc</td><td>close this</td></tr>
+          <tr><td class="k">Tab</td><td>switch between alex &amp; rose</td></tr>
+          <tr><td class="k">M</td><td>sing your character's song</td></tr>
+          <tr><td class="k">Q</td><td>say a random classic line</td></tr>
+          <tr><td class="k">K</td><td>kiss the other one (when you're close)</td></tr>
+          <tr><td class="k">B</td><td>toggle build mode (move furniture)</td></tr>
+          <tr><td class="k">R</td><td>rotate furniture in build mode</td></tr>
+          <tr><td class="k">Esc</td><td>close menus</td></tr>
         </table>
-        <p style="margin-top:14px">Hearts go up when you interact with stuff and especially when you're together — both on the sofa, both in bed, etc. Walk Alex over to bed and press space → lullaby. Walk Rose to the mirror → villain song.</p>
-        <button class="close" id="help-close">got it</button>
+        <p class="sub" style="margin-top:14px">on a phone: drag on the left half to walk. tap A to interact. ♥ to kiss. tap furniture in build mode.</p>
+        <div class="modal-btns"><button class="primary" data-close>got it</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-wardrobe">
+      <div class="modal-panel">
+        <h2>👗 wardrobe</h2>
+        <p class="sub">pick what alex and rose look like. saves automatically.</p>
+        <div class="wardrobe-grid" id="wardrobe-grid"></div>
+        <div class="modal-btns"><button class="primary" data-close>done</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-shop">
+      <div class="modal-panel">
+        <h2>🛒 furniture shop</h2>
+        <p class="sub">spend hearts on new stuff. you have <span id="shop-hearts">0</span> ♥</p>
+        <div class="cat-grid" id="cat-grid"></div>
+        <div class="modal-btns">
+          <button class="primary" data-close>back to apt</button>
+          <button class="ghost" id="reset-furn">reset apt</button>
+        </div>
       </div>
     </div>
 
@@ -326,331 +343,209 @@
           <div class="who"><canvas id="t-rose" width="80" height="100"></canvas><div class="name">Rose</div></div>
         </div>
         <button id="enter-btn">enter the apartment</button>
-        <div class="hint">arrows / wasd or buttons below · tab to swap who you control</div>
-      </div>
-    </div>
-
-    <div id="build-banner">
-      <span id="build-banner-text">build mode</span>
-      <button id="build-banner-exit">exit</button>
-    </div>
-
-    <div id="build-panel">
-      <div class="build-head">
-        <h3>catalogue</h3>
-        <button class="close-x" id="build-close">×</button>
-      </div>
-      <div class="build-tabs" id="build-tabs"></div>
-      <div class="build-list" id="build-list"></div>
-      <div class="build-foot">
-        <span class="pip">♥ <span id="build-hearts">0</span></span> ·
-        tap an item to buy and place it. tap existing furniture to move or delete.
+        <div class="hint">arrows / wasd · tab to swap · drag on phone</div>
       </div>
     </div>
   </div>
 
-  <div id="touch-controls">
-    <div id="dpad">
-      <button class="up"    data-tk="arrowup">▲</button>
-      <button class="left"  data-tk="arrowleft">◀</button>
-      <button class="right" data-tk="arrowright">▶</button>
-      <button class="down"  data-tk="arrowdown">▼</button>
-    </div>
-    <div id="action-grid">
-      <button class="primary" data-tap=" "><span class="icon">✋</span><span class="lbl">act</span></button>
-      <button data-tap="tab"><span class="icon">↺</span><span class="lbl">swap</span></button>
-      <button class="pink" data-tap="k"><span class="icon">💋</span><span class="lbl">kiss</span></button>
-      <button data-tap="m"><span class="icon">♪</span><span class="lbl">sing</span></button>
-      <button data-tap="q"><span class="icon">💬</span><span class="lbl">quote</span></button>
-      <button data-tap="h"><span class="icon">♥</span><span class="lbl">heart</span></button>
-      <button class="amber" data-tap="b"><span class="icon">🛒</span><span class="lbl">build</span></button>
-      <button data-tap="x"><span class="icon">🗑️</span><span class="lbl">del</span></button>
-    </div>
-  </div>
-
-  <footer>made with love · single-player on each Mac · scoot Tab to swap who you're playing</footer>
+  <footer>made with love · works on mac &amp; iphone · ♥ alex &amp; rose</footer>
 </div>
 
 <script>
 (() => {
-  // ------------------ constants & setup ------------------
   const TILE = 32;
   const MAP_W = 25, MAP_H = 18;
-  const W = MAP_W * TILE; // 800
-  const H = MAP_H * TILE; // 576
-
+  const W = MAP_W * TILE, H = MAP_H * TILE;
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  // ------------------ map ------------------
-  // 0 floor, 1 wall, 2 outer wall (drawn slightly different)
+  // MAP
   const map = (() => {
     const m = [];
-    for (let y = 0; y < MAP_H; y++) {
-      const row = [];
-      for (let x = 0; x < MAP_W; x++) row.push(0);
-      m.push(row);
-    }
-    // outer walls
+    for (let y = 0; y < MAP_H; y++) { const row = []; for (let x = 0; x < MAP_W; x++) row.push(0); m.push(row); }
     for (let x = 0; x < MAP_W; x++) { m[0][x] = 2; m[MAP_H - 1][x] = 2; }
     for (let y = 0; y < MAP_H; y++) { m[y][0] = 2; m[y][MAP_W - 1] = 2; }
-    // vertical wall at x=8
     for (let y = 1; y < MAP_H - 1; y++) m[y][8] = 1;
-    // horizontal walls (left side)
     for (let x = 1; x < 8; x++) { m[6][x] = 1; m[12][x] = 1; }
-    // horizontal wall on right between balcony & living
     for (let x = 9; x < MAP_W - 1; x++) m[5][x] = 1;
-    // doors (knock holes)
-    m[3][8] = 0;  // bedroom <-> living
-    m[9][8] = 0;  // kitchen <-> living
-    m[15][8] = 0; // bathroom <-> living
-    m[6][3] = 0;  // bedroom <-> kitchen
-    m[12][3] = 0; // kitchen <-> bathroom
-    m[5][16] = 0; // living <-> balcony
+    m[3][8] = 0; m[9][8] = 0; m[15][8] = 0;
+    m[6][3] = 0; m[12][3] = 0; m[5][16] = 0;
     return m;
   })();
 
   const rooms = [
-    { name: 'Bedroom',     x: 0, y: 0, w: 9 * TILE,            h: 7 * TILE,             color: '#f3d6e6', accent: '#e7a8c4' },
-    { name: 'Balcony',     x: 8 * TILE, y: 0, w: (MAP_W - 8) * TILE, h: 6 * TILE,        color: '#cfe6cf', accent: '#a4c89f' },
-    { name: 'Living Room', x: 8 * TILE, y: 5 * TILE, w: (MAP_W - 8) * TILE, h: (MAP_H - 5) * TILE, color: '#fbe2bd', accent: '#ddae6a' },
-    { name: 'Kitchen',     x: 0, y: 6 * TILE, w: 9 * TILE, h: 7 * TILE,                  color: '#dde8f4', accent: '#a4bbd2' },
-    { name: 'Bathroom',    x: 0, y: 12 * TILE, w: 9 * TILE, h: 6 * TILE,                 color: '#e6dcf2', accent: '#b29bd0' },
+    { name: 'Bedroom',     x: 0, y: 0, w: 9 * TILE, h: 7 * TILE,                color: '#f3d6e6' },
+    { name: 'Balcony',     x: 8 * TILE, y: 0, w: (MAP_W - 8) * TILE, h: 6 * TILE, color: '#cfe6cf' },
+    { name: 'Living Room', x: 8 * TILE, y: 5 * TILE, w: (MAP_W - 8) * TILE, h: (MAP_H - 5) * TILE, color: '#fbe2bd' },
+    { name: 'Kitchen',     x: 0, y: 6 * TILE, w: 9 * TILE, h: 7 * TILE,         color: '#dde8f4' },
+    { name: 'Bathroom',    x: 0, y: 12 * TILE, w: 9 * TILE, h: 6 * TILE,         color: '#e6dcf2' },
   ];
+  const roomAt = (px, py) => rooms.find(r => px >= r.x && px < r.x + r.w && py >= r.y && py < r.y + r.h) || null;
 
-  const roomAt = (px, py) => {
-    // Find smallest containing room (rooms can overlap at borders; pick one matching tile center)
-    for (const r of rooms) {
-      if (px >= r.x && px < r.x + r.w && py >= r.y && py < r.y + r.h) return r;
-    }
-    return null;
-  };
+  // SAVE/LOAD
+  const STORAGE = 'apt_state_v2';
+  function loadSave() { try { return JSON.parse(localStorage.getItem(STORAGE) || 'null'); } catch { return null; } }
+  function persist() {
+    const data = {
+      hearts: totalHearts,
+      look: {
+        alex: { hair: alex.hair, shirt: alex.shirt, pants: alex.pants, skin: alex.skin },
+        rose: { hair: rose.hair, shirt: rose.shirt, pants: rose.pants, skin: rose.skin },
+      },
+      furniture: furniture.map(f => ({ id: f.id, kind: f.kind, x: f.x, y: f.y, w: f.w, h: f.h, label: f.label, short: f.short, action: f.action, bothBoost: f.bothBoost, decor: f.decor, light: f.light })),
+    };
+    localStorage.setItem(STORAGE, JSON.stringify(data));
+  }
+  const saved = loadSave();
 
-  // ------------------ furniture ------------------
-  // x,y,w,h in pixels. interact provides the action label & callback.
-  const furniture = [
-    // BEDROOM
+  // FURNITURE
+  const DEFAULT_FURNITURE = [
     { id: 'bed',      kind: 'bed',     x: 48,  y: 64,  w: 96, h: 128, label: 'woohoo in bed',  short: 'sleep',  action: 'sleep',  bothBoost: 6 },
     { id: 'dresser',  kind: 'dresser', x: 160, y: 48,  w: 64, h: 32,  label: 'change outfit',  short: 'dress',  action: 'dress' },
     { id: 'rug-bed',  kind: 'rug',     x: 32,  y: 152, w: 192, h: 24, decor: true },
-    { id: 'lamp-bed', kind: 'lamp',    x: 192, y: 96,  w: 24, h: 24,  label: 'flick lamp',     short: 'lamp',   action: 'lamp', solidOverride: false },
-
-    // BALCONY
+    { id: 'lamp-bed', kind: 'lamp',    x: 192, y: 96,  w: 24, h: 24,  label: 'flick lamp',     short: 'lamp',   action: 'lamp', light: true },
     { id: 'plants-l', kind: 'plants',  x: 304, y: 32,  w: 56, h: 36,  label: 'water plants',   short: 'water',  action: 'water' },
     { id: 'plants-r', kind: 'plants',  x: 624, y: 32,  w: 56, h: 36,  label: 'water plants',   short: 'water',  action: 'water' },
     { id: 'bal-chair',kind: 'chair',   x: 528, y: 96,  w: 36, h: 44,  label: 'lounge outside', short: 'lounge', action: 'lounge' },
     { id: 'bal-table',kind: 'side-table', x: 576, y: 104, w: 28, h: 28, label: 'sip drink',    short: 'sip',    action: 'sip' },
     { id: 'rug-bal',  kind: 'rug-bal', x: 504, y: 88,  w: 168, h: 64, decor: true },
-    { id: 'shrine',   kind: 'shrine',  x: 408, y: 96,  w: 40, h: 48,  label: 'remember Monica', short: 'monica', action: 'remember' },
-
-    // LIVING ROOM
     { id: 'sofa',     kind: 'sofa',    x: 304, y: 224, w: 192, h: 64,  label: 'woohoo on sofa', short: 'sit',    action: 'sit',  bothBoost: 4 },
     { id: 'coffee',   kind: 'coffee',  x: 352, y: 312, w: 96, h: 36,   label: 'flip a magazine', short: 'read',  action: 'read' },
     { id: 'tv',       kind: 'tv',      x: 608, y: 192, w: 96, h: 36,   label: 'watch tv',        short: 'tv',    action: 'tv' },
     { id: 'rug-liv',  kind: 'rug-liv', x: 320, y: 224, w: 256, h: 144, decor: true },
     { id: 'bookcase', kind: 'bookcase',x: 296, y: 192, w: 64,  h: 24,  label: 'pick a book',     short: 'read',  action: 'read' },
-
-    // KITCHEN
     { id: 'fridge',   kind: 'fridge',  x: 32,  y: 224, w: 56, h: 72,  label: 'snack from fridge', short: 'snack', action: 'snack' },
     { id: 'stove',    kind: 'stove',   x: 96,  y: 224, w: 56, h: 56,  label: 'cook something',    short: 'cook',  action: 'cook' },
     { id: 'sink-k',   kind: 'sink-k',  x: 160, y: 224, w: 56, h: 40,  label: 'wash up',           short: 'wash',  action: 'wash' },
     { id: 'k-table',  kind: 'k-table', x: 64,  y: 320, w: 128, h: 56, label: 'sit at table',      short: 'eat',   action: 'eat',  bothBoost: 3 },
-
-    // BATHROOM
     { id: 'bath',     kind: 'bath',    x: 32,  y: 480, w: 112, h: 64, label: 'take a bath',       short: 'bath',  action: 'bath' },
-    { id: 'mirror',   kind: 'mirror',  x: 168, y: 432, w: 56, h: 16,  label: 'look in mirror',    short: 'gaze',  action: 'gaze', solidOverride: false },
+    { id: 'mirror',   kind: 'mirror',  x: 168, y: 432, w: 56, h: 16,  label: 'look in mirror',    short: 'gaze',  action: 'gaze' },
     { id: 'sink-b',   kind: 'sink-b',  x: 168, y: 448, w: 56, h: 32,  label: 'splash water',      short: 'wash',  action: 'wash' },
     { id: 'toilet',   kind: 'toilet',  x: 200, y: 504, w: 32, h: 40,  label: 'pee real quick',    short: 'go',    action: 'pee' },
     { id: 'rug-bath', kind: 'rug-bath',x: 32,  y: 552, w: 128, h: 16, decor: true },
   ];
 
-  furniture.forEach(f => {
-    if (f.decor) f.solid = false;
-    else if (f.solidOverride === false) f.solid = false;
-    else f.solid = true;
-  });
+  let furniture = saved?.furniture ? saved.furniture.map(o => ({...o})) : DEFAULT_FURNITURE.map(o => ({...o}));
+  function refreshSolids() { furniture.forEach(f => f.solid = !f.decor); }
+  refreshSolids();
 
-  // ------------------ characters ------------------
+  // CHARACTERS
+  const COLORS = {
+    hair: ['#e9c66a','#caa452','#a06b3c','#5a3326','#2a1a18','#c44b6e','#9a4cb0','#3f6dd6','#e08a4a','#e9d5d0'],
+    shirt: ['#6cdac6','#ff8aa8','#ffd166','#a3a8ff','#c5e07a','#ef8a5c','#e9b6e3','#7ec5d6','#fef3d3','#1a1a2c'],
+    pants: ['#3a4252','#2a253a','#7c5a3a','#5a4a30','#caa452','#1a4d4e','#3a1a2c'],
+    skin: ['#fde6cf','#ffd9b8','#f2c195','#d49a72','#a87858','#7a4f30','#fbd0bd','#e6c4a7'],
+  };
+
   function makeChar(opts) {
     return {
-      name: opts.name,
-      x: opts.x, y: opts.y,
-      vx: 0, vy: 0,
-      facing: 'down',
-      hair: opts.hair, hairAccent: opts.hairAccent,
-      shirt: opts.shirt, pants: opts.pants,
-      skin: opts.skin || '#ffe1c4',
+      name: opts.name, x: opts.x, y: opts.y, facing: 'down',
+      hair: opts.hair, shirt: opts.shirt, pants: opts.pants, skin: opts.skin,
       walking: false, walkPhase: 0,
-      using: null,           // furniture being used or null
-      usingTimer: 0,
+      using: null, usingTimer: 0,
       ai: opts.ai || null,
       song: opts.song,
-      lastInteract: 0,
-      hearts: 0,             // personal contribution to shared hearts
+      lastSaying: null,
+      sayTimer: 4 + Math.random() * 6,
+      proxiTimer: 0,
     };
   }
 
   const alex = makeChar({
-    name: 'Alex',
-    x: 200, y: 130,
-    hair: '#e9c66a', hairAccent: '#c79f48',
-    shirt: '#6cdac6', pants: '#3a4252', skin: '#ffd9b8',
+    name: 'Alex', x: 200, y: 130,
+    hair: saved?.look?.alex?.hair || '#e9c66a',
+    shirt: saved?.look?.alex?.shirt || '#6cdac6',
+    pants: saved?.look?.alex?.pants || '#3a4252',
+    skin: saved?.look?.alex?.skin || '#ffd9b8',
     song: 'lullaby',
-    ai: { state: 'idle', cooldown: 0, target: null, usingFor: 0, songRoll: 0 },
+    ai: { state: 'idle', cooldown: 0, target: null, usingFor: 0 },
   });
-
   const rose = makeChar({
-    name: 'Rose',
-    x: 232, y: 130,
-    hair: '#3b1d2c', hairAccent: '#21111a',
-    shirt: '#ff8aa8', pants: '#2a253a', skin: '#fbd0bd',
+    name: 'Rose', x: 232, y: 130,
+    hair: saved?.look?.rose?.hair || '#3b1d2c',
+    shirt: saved?.look?.rose?.shirt || '#ff8aa8',
+    pants: saved?.look?.rose?.pants || '#2a253a',
+    skin: saved?.look?.rose?.skin || '#fbd0bd',
     song: 'villain',
-    ai: { state: 'idle', cooldown: 0, target: null, usingFor: 0, songRoll: 0 },
+    ai: { state: 'idle', cooldown: 0, target: null, usingFor: 0 },
   });
 
-  let activeIdx = 0; // 0 = alex
+  let activeIdx = 0;
   const chars = [alex, rose];
   const active = () => chars[activeIdx];
   const npc = () => chars[1 - activeIdx];
+  const charIdx = c => c === alex ? 0 : 1;
+  const otherChar = c => c === alex ? rose : alex;
 
-  // ------------------ meeko the cat ------------------
-  // tabby grey w/ darker stripes, black face/legs, white chest
-  const meeko = {
-    name: 'Meeko',
-    x: 520, y: 380, facing: 'down',
-    walking: false, walkPhase: 0,
-    target: null, cooldown: 1, sitTimer: 0,
-    purrTimer: 0,
-  };
-
-  // ------------------ shared state ------------------
-  let totalHearts = parseInt(localStorage.getItem('apt_hearts') || '0', 10);
-  document.getElementById('hearts').textContent = totalHearts;
-
-  function addHearts(n) {
-    totalHearts += n;
-    if (totalHearts < 0) totalHearts = 0;
+  // HEARTS
+  let totalHearts = saved?.hearts ?? 0;
+  let _persistT = 0;
+  function persistDebounced() { clearTimeout(_persistT); _persistT = setTimeout(persist, 300); }
+  function setHearts(n) {
+    totalHearts = Math.max(0, n | 0);
     document.getElementById('hearts').textContent = totalHearts;
-    localStorage.setItem('apt_hearts', totalHearts);
+    document.getElementById('shop-hearts').textContent = totalHearts;
+    persistDebounced();
+  }
+  function addHearts(n) { setHearts(totalHearts + n); }
+
+  // SONGS
+  const SONGS = {
+    lullaby: { lines: ["Alexandra...","It's time to take off your bra","It's time to relax","So lie on your back","Alexandra","The lion goes rah","The peacock goes wah","Alexandra"], tone: 'soft' },
+    villain: { lines: ["Rows and columns...","Rowers and kayaks","Rose and fallen","Rose and daisies"], tone: 'menacing' },
+  };
+  function singSong(songKey, ownerIdx) {
+    const s = SONGS[songKey]; if (!s) return;
+    let delay = 0;
+    s.lines.forEach((line) => { setTimeout(() => bubble(ownerIdx, line, 2.6, s.tone), delay); delay += 1900; });
   }
 
-  // ------------------ songs ------------------
-  const SONGS = {
-    lullaby: {
-      title: "Alexandra (lullaby)",
-      character: 'Alex',
-      lines: [
-        "Alexandra...",
-        "It's time to take off your bra",
-        "It's time to relax",
-        "So lie on your back",
-        "Alexandra",
-        "The lion goes rah",
-        "The peacock goes wah",
-        "Alexandra",
-      ],
-      tone: 'soft',
-    },
-    villain: {
-      title: "Rose Theme (villain anthem)",
-      character: 'Rose',
-      lines: [
-        "Rows and columns...",
-        "Rowers and kayaks",
-        "Rose and fallen",
-        "Rose and daisies",
-      ],
-      tone: 'menacing',
-    },
-  };
-
-  // ------------------ ambient sayings ------------------
+  // SAYINGS
   const SAYINGS = {
-    alex: [
-      'I love swimming',
-      'interesting',
-      'autism things',
-      'Claude',
-      '*blinks intensely*',
-      'I love Rose she is amazing and I miss her so much that I created this game',
-    ],
-    rose: [
-      'so real so true',
-      'I love hockey',
-      'I love stakeholder engagements',
-      'I love frameworks',
-      'I love capsicum',
-      'I love alex she is the absolute best',
-      'bum pimples',
-    ],
+    alex: ['I love swimming','interesting','autism things','Claude','*blinks intensely*','I love Rose she is amazing and I miss her so much that I created this game'],
+    rose: ['so real so true','I love hockey','I love stakeholder engagements','I love frameworks','I love capsicum','I love alex she is the absolute best','bum pimples'],
   };
-
   function sayRandom(c) {
     const i = charIdx(c);
     if (bubbles.some(b => b.ownerIdx === i)) return false;
     const list = c === alex ? SAYINGS.alex : SAYINGS.rose;
-    let s, tries = 0;
-    do { s = list[(Math.random() * list.length) | 0]; tries++; } while (s === c.lastSaying && tries < 5);
+    let s, t = 0;
+    do { s = list[(Math.random() * list.length) | 0]; t++; } while (s === c.lastSaying && t < 6);
     c.lastSaying = s;
-    const ttl = Math.max(2.4, Math.min(6.0, s.length * 0.07));
-    bubble(i, s, ttl);
+    bubble(i, s, Math.max(2.4, Math.min(5.5, s.length * 0.07)));
     return true;
   }
-  let proximityTimer = 0;
 
-  // ------------------ bubbles (speech) ------------------
-  // Each bubble: { ownerIdx, text, ttl, totalTtl, tone }
+  // BUBBLES
   const bubbles = [];
   function bubble(ownerIdx, text, ttl = 2.6, tone = 'neutral') {
     bubbles.push({ ownerIdx, text, ttl, totalTtl: ttl, tone });
   }
-  function singSong(songKey, ownerIdx) {
-    const s = SONGS[songKey];
-    if (!s) return;
-    let delay = 0;
-    s.lines.forEach((line, i) => {
-      setTimeout(() => bubble(ownerIdx, line, 2.6, s.tone), delay);
-      delay += 1900;
-    });
-  }
 
-  // ------------------ floating hearts ------------------
+  // PARTICLES
   const particles = [];
   function spawnHearts(x, y, n = 5, color = '#ff8aa8') {
     for (let i = 0; i < n; i++) {
       particles.push({
-        x: x + (Math.random() - 0.5) * 10,
-        y: y - 8,
-        vx: (Math.random() - 0.5) * 30,
-        vy: -30 - Math.random() * 30,
-        ttl: 1.0 + Math.random() * 0.6,
-        total: 1.4,
-        color,
-        size: 6 + Math.random() * 4,
+        x: x + (Math.random() - 0.5) * 14, y: y - 6,
+        vx: (Math.random() - 0.5) * 36, vy: -32 - Math.random() * 30,
+        ttl: 1.0 + Math.random() * 0.6, total: 1.6,
+        color, size: 5 + Math.random() * 4,
       });
     }
   }
 
-  // ------------------ collision ------------------
-  // Character bounding box for collision: small box at feet
-  const CHAR_HW = 6;  // half width
-  const CHAR_FH = 5;  // feet height extent above feet point
-
-  function collidesAt(x, y, exclude) {
-    // x,y is feet position
-    const bx = x - CHAR_HW, by = y - CHAR_FH;
-    const bw = CHAR_HW * 2, bh = CHAR_FH * 2;
-    // wall tiles
+  // COLLISION
+  const CHAR_HW = 6, CHAR_FH = 5;
+  function collidesAt(x, y) {
+    const bx = x - CHAR_HW, by = y - CHAR_FH, bw = CHAR_HW * 2, bh = CHAR_FH * 2;
     const tx0 = Math.floor(bx / TILE), ty0 = Math.floor(by / TILE);
     const tx1 = Math.floor((bx + bw - 1) / TILE), ty1 = Math.floor((by + bh - 1) / TILE);
-    for (let ty = ty0; ty <= ty1; ty++) {
-      for (let tx = tx0; tx <= tx1; tx++) {
-        if (ty < 0 || ty >= MAP_H || tx < 0 || tx >= MAP_W) return true;
-        if (map[ty][tx] !== 0) return true;
-      }
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      if (ty < 0 || ty >= MAP_H || tx < 0 || tx >= MAP_W) return true;
+      if (map[ty][tx] !== 0) return true;
     }
-    // furniture
     for (const f of furniture) {
       if (!f.solid) continue;
       if (bx < f.x + f.w && bx + bw > f.x && by < f.y + f.h && by + bh > f.y) return true;
@@ -658,9 +553,11 @@
     return false;
   }
 
-  // ------------------ input ------------------
+  // INPUT
   const keys = {};
-  let keyEdge = {}; // edges this frame
+  let keyEdge = {};
+  let titleScreenVisible = true;
+
   window.addEventListener('keydown', e => {
     if (e.key === 'Tab') e.preventDefault();
     if (titleScreenVisible && (e.key === 'Enter' || e.key === ' ')) { hideTitle(); return; }
@@ -668,343 +565,229 @@
     keys[e.key.toLowerCase()] = true;
     keyEdge[e.key.toLowerCase()] = true;
   });
-  window.addEventListener('keyup', e => {
-    keys[e.key.toLowerCase()] = false;
+  window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+  // Touch joystick
+  const stick = document.getElementById('stick');
+  const stickKnob = document.getElementById('stick-knob');
+  const stickArea = document.getElementById('stick-area');
+  let stickActive = false, stickOrigin = { x: 0, y: 0 }, stickDelta = { x: 0, y: 0 };
+  const STICK_R = 50;
+
+  stickArea.addEventListener('touchstart', e => {
+    if (titleScreenVisible) { hideTitle(); }
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    const rect = stickArea.getBoundingClientRect();
+    stickOrigin = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    stick.style.left = (stickOrigin.x - 55) + 'px';
+    stick.style.top = (stickOrigin.y - 55) + 'px';
+    stick.classList.add('show');
+    stickActive = true;
+    stickDelta = { x: 0, y: 0 };
+    stickKnob.style.transform = 'translate(-50%,-50%)';
+  }, { passive: false });
+  stickArea.addEventListener('touchmove', e => {
+    if (!stickActive) return;
+    e.preventDefault();
+    const t = e.changedTouches[0];
+    const rect = stickArea.getBoundingClientRect();
+    let dx = (t.clientX - rect.left) - stickOrigin.x;
+    let dy = (t.clientY - rect.top) - stickOrigin.y;
+    const d = Math.hypot(dx, dy);
+    if (d > STICK_R) { dx = dx / d * STICK_R; dy = dy / d * STICK_R; }
+    stickDelta = { x: dx / STICK_R, y: dy / STICK_R };
+    stickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  }, { passive: false });
+  function endStick(e) {
+    if (e) e.preventDefault();
+    stickActive = false;
+    stick.classList.remove('show');
+    stickDelta = { x: 0, y: 0 };
+  }
+  stickArea.addEventListener('touchend', endStick);
+  stickArea.addEventListener('touchcancel', endStick);
+
+  function fakeKey(k) {
+    if (titleScreenVisible) { hideTitle(); return; }
+    keyEdge[k] = true;
+  }
+  document.getElementById('btn-interact').addEventListener('click', e => { e.preventDefault(); fakeKey(' '); });
+  document.getElementById('btn-swap').addEventListener('click', e => { e.preventDefault(); fakeKey('tab'); });
+  document.getElementById('btn-kiss').addEventListener('click', e => { e.preventDefault(); fakeKey('k'); });
+  document.getElementById('btn-sing').addEventListener('click', e => { e.preventDefault(); fakeKey('m'); });
+  document.getElementById('btn-say').addEventListener('click', e => { e.preventDefault(); fakeKey('q'); });
+  document.getElementById('btn-rotate').addEventListener('click', e => { e.preventDefault(); fakeKey('r'); });
+
+  // Tap canvas (build mode)
+  function canvasPointToWorld(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (clientX - rect.left) * (W / rect.width), y: (clientY - rect.top) * (H / rect.height) };
+  }
+  canvas.addEventListener('click', (e) => {
+    if (!buildMode) return;
+    const p = canvasPointToWorld(e.clientX, e.clientY);
+    handleBuildTap(p.x, p.y);
   });
+  canvas.addEventListener('touchstart', (e) => {
+    if (!buildMode || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const sr = stickArea.getBoundingClientRect();
+    if (t.clientX >= sr.left && t.clientX <= sr.right && t.clientY >= sr.top && t.clientY <= sr.bottom) return;
+    e.preventDefault();
+    const p = canvasPointToWorld(t.clientX, t.clientY);
+    handleBuildTap(p.x, p.y);
+  }, { passive: false });
 
-  // help
-  const helpOverlay = document.getElementById('help');
-  document.getElementById('help-toggle').addEventListener('click', () => helpOverlay.classList.toggle('show'));
-  document.getElementById('help-close').addEventListener('click', () => helpOverlay.classList.remove('show'));
+  // Top buttons + modals
+  document.getElementById('btn-help-top').addEventListener('click', () => showModal('modal-help'));
+  document.getElementById('btn-wardrobe-top').addEventListener('click', openWardrobe);
+  document.getElementById('btn-shop-top').addEventListener('click', openShop);
+  document.getElementById('btn-build-top').addEventListener('click', toggleBuild);
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeAllModals));
 
-  // title
-  let titleScreenVisible = true;
-  const titleEl = document.getElementById('title-screen');
+  function showModal(id) { closeAllModals(); document.getElementById(id).classList.add('show'); }
+  function closeAllModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('show')); }
+
   function hideTitle() {
     titleScreenVisible = false;
-    titleEl.classList.add('hidden');
+    document.getElementById('title-screen').classList.add('hidden');
   }
-  document.getElementById('enter-btn').addEventListener('click', (e) => { hideTitle(); if (e.target && e.target.blur) e.target.blur(); });
+  document.getElementById('enter-btn').addEventListener('click', (e) => { hideTitle(); if (e.target?.blur) e.target.blur(); });
+  document.getElementById('title-screen').addEventListener('touchstart', (e) => {
+    if (e.target.id === 'enter-btn') return;
+    hideTitle();
+  });
 
-  // ------------------ interaction proximity ------------------
+  // INTERACTION
   function nearestInteractable(c) {
-    let best = null, bestDist = 28; // max distance to interact
+    let best = null, bestDist = 28;
     for (const f of furniture) {
       if (!f.label) continue;
-      const fx = f.x + f.w / 2, fy = f.y + f.h / 2;
-      const dx = c.x - fx, dy = c.y - fy;
-      // distance to nearest edge of furniture
-      const ex = Math.max(0, Math.abs(dx) - f.w / 2);
-      const ey = Math.max(0, Math.abs(dy) - f.h / 2);
+      const ex = Math.max(0, Math.abs(c.x - (f.x + f.w / 2)) - f.w / 2);
+      const ey = Math.max(0, Math.abs(c.y - (f.y + f.h / 2)) - f.h / 2);
       const d = Math.hypot(ex, ey);
       if (d < bestDist) { bestDist = d; best = f; }
     }
-    // also consider meeko as a pettable target
-    if (typeof meeko !== 'undefined') {
-      const mw = 16, mh = 12;
-      const mx = meeko.x - mw / 2, my = meeko.y - mh;
-      const ex = Math.max(0, Math.abs(c.x - (mx + mw / 2)) - mw / 2);
-      const ey = Math.max(0, Math.abs(c.y - (my + mh / 2)) - mh / 2);
-      const d = Math.hypot(ex, ey);
-      if (d < bestDist) {
-        bestDist = d;
-        best = { id: 'meeko', kind: 'meeko-pet', x: mx, y: my, w: mw, h: mh, label: 'pet Meeko', short: 'pet', action: 'pet-meeko', _meeko: true };
-      }
-    }
     return best;
   }
-
   function startUsing(c, f) {
-    c.using = f;
-    c.usingTimer = 0;
-    c.lastInteract = perfNow();
-    addHearts(1);
-    // snap a little toward the furniture for visual nicety
+    c.using = f; c.usingTimer = 0; addHearts(1);
     const fx = f.x + f.w / 2;
-    if (c.x < fx) c.facing = 'right';
-    else if (c.x > fx) c.facing = 'left';
-    // event
+    if (c.x < fx) c.facing = 'right'; else if (c.x > fx) c.facing = 'left';
     onUseStart(c, f);
   }
-  function stopUsing(c) {
-    if (c.using) onUseEnd(c, c.using);
-    c.using = null;
-    c.usingTimer = 0;
-  }
+  function stopUsing(c) { c.using = null; c.usingTimer = 0; }
 
   function onUseStart(c, f) {
-    if (f.action === 'sleep')  bubble(charIdx(c), c === alex ? 'mmm bed.' : 'sleepy.', 1.8);
-    if (f.action === 'sit')    bubble(charIdx(c), 'sofa life.', 1.8);
-    if (f.action === 'eat')    bubble(charIdx(c), 'snack incoming', 1.8);
-    if (f.action === 'snack')  bubble(charIdx(c), 'fridge raid', 1.8);
-    if (f.action === 'cook')   bubble(charIdx(c), 'cheffing', 1.8);
-    if (f.action === 'water')  bubble(charIdx(c), 'plant babies', 1.8);
-    if (f.action === 'lounge') bubble(charIdx(c), 'sun + chair = yes', 1.8);
-    if (f.action === 'sip')    bubble(charIdx(c), 'tiny drink', 1.6);
-    if (f.action === 'tv')     bubble(charIdx(c), 'tv noises', 1.8);
-    if (f.action === 'read')   bubble(charIdx(c), 'reading', 1.8);
-    if (f.action === 'wash')   bubble(charIdx(c), 'splash splash', 1.6);
-    if (f.action === 'gaze')   bubble(charIdx(c), c === rose ? 'hello, me.' : 'look at u', 2.0);
-    if (f.action === 'bath')   bubble(charIdx(c), 'bath time', 1.8);
-    if (f.action === 'pee')    bubble(charIdx(c), 'brb', 1.4);
-    if (f.action === 'dress')  bubble(charIdx(c), 'outfit change', 1.8);
-    if (f.action === 'lamp')   bubble(charIdx(c), 'click', 1.2);
-    if (f.action === 'pet-meeko') {
-      const lines = ['hi meeko ♥', 'who\'s a good kitty', 'soft floof', 'meeko ♪', '*scritches*'];
-      bubble(charIdx(c), lines[(Math.random() * lines.length) | 0], 1.8);
-      meeko.purrTimer = 3.5;
-      meeko.sitTimer = Math.max(meeko.sitTimer, 2.5);
-      spawnHearts(meeko.x, meeko.y - 18, 3, '#ff8aa8');
-      addHearts(1);
-      // immediately stop "using" so you can keep moving
-      setTimeout(() => { if (c.using === f) stopUsing(c); }, 100);
-    }
-    if (f.action === 'remember') {
-      const lines = ['miss you, monica', 'forever loved ♥', '*lights candle*', 'tiny tabby angel'];
-      bubble(charIdx(c), lines[(Math.random() * lines.length) | 0], 2.4);
-      spawnHearts(f.x + f.w / 2, f.y - 4, 4, '#caa6ff');
-      addHearts(2);
-    }
-
-    // special triggers
-    if (c === alex && f.action === 'sleep') {
-      setTimeout(() => { if (c.using === f) singSong('lullaby', charIdx(c)); }, 600);
-    }
-    if (c === rose && f.action === 'gaze') {
-      setTimeout(() => { if (c.using === f) singSong('villain', charIdx(c)); }, 500);
-    }
-    // both characters using same furniture with bothBoost
-    if (f.bothBoost && otherCharIs(c, f)) {
+    const i = charIdx(c);
+    const tip = {
+      sleep:'mmm bed.', sit:'sofa life.', eat:'snack incoming', snack:'fridge raid',
+      cook:'cheffing', water:'plant babies', lounge:'sun + chair = yes', sip:'tiny drink',
+      tv:'tv noises', read:'reading', wash:'splash splash', gaze: c === rose ? 'hello, me.' : 'look at u',
+      bath:'bath time', pee:'brb', dress:'outfit change', lamp:'click',
+    }[f.action];
+    if (tip) bubble(i, tip, 1.7);
+    if (c === alex && f.action === 'sleep') setTimeout(() => { if (c.using === f) singSong('lullaby', i); }, 600);
+    if (c === rose && f.action === 'gaze')  setTimeout(() => { if (c.using === f) singSong('villain', i); }, 500);
+    if (f.bothBoost && otherChar(c).using === f) {
       addHearts(f.bothBoost);
       spawnHearts(f.x + f.w / 2, f.y - 4, f.bothBoost + 2, '#ff5f8a');
       bubble(0, 'woohoo!', 1.8);
       bubble(1, 'woohoo!', 1.8);
     }
   }
-  function onUseEnd(c, f) {}
 
-  function otherCharIs(c, f) {
-    const o = c === alex ? rose : alex;
-    if (!o.using) return false;
-    return o.using === f;
+  function tryKiss() {
+    const a = active(), o = otherChar(a);
+    const dist = Math.hypot(a.x - o.x, a.y - o.y);
+    if (dist < 30) {
+      bubble(charIdx(a), '*kiss*', 1.6);
+      bubble(charIdx(o), '♥', 1.4);
+      spawnHearts((a.x + o.x) / 2, (a.y + o.y) / 2 - 18, 9, '#ff5f8a');
+      addHearts(3);
+    } else {
+      bubble(charIdx(a), 'come closer', 1.4);
+    }
   }
-  function charIdx(c) { return c === alex ? 0 : 1; }
 
-  // ------------------ AI for the non-active character ------------------
+  function updateProximity(dt) {
+    if (alex.using || rose.using) { alex.proxiTimer = 0; return; }
+    const d = Math.hypot(alex.x - rose.x, alex.y - rose.y);
+    if (d < 28) {
+      alex.proxiTimer += dt;
+      if (alex.proxiTimer > 3) {
+        alex.proxiTimer = 0;
+        addHearts(1);
+        spawnHearts((alex.x + rose.x) / 2, (alex.y + rose.y) / 2 - 30, 2, '#ff8aa8');
+      }
+    } else { alex.proxiTimer = 0; }
+  }
+
+  // NPC AI
   const interestKinds = ['bed','sofa','tv','fridge','plants','bath','mirror','chair','k-table','bookcase','coffee','sink-k','dresser','side-table'];
-
   function pickInterest(c) {
-    const candidates = furniture.filter(f => f.solid && f.label && interestKinds.includes(f.kind));
-    const choice = candidates[(Math.random() * candidates.length) | 0];
+    const cands = furniture.filter(f => f.solid && f.label && interestKinds.includes(f.kind));
+    if (!cands.length) return null;
+    const choice = cands[(Math.random() * cands.length) | 0];
     const sides = [
       { x: choice.x + choice.w / 2, y: choice.y + choice.h + 12 },
       { x: choice.x + choice.w + 12, y: choice.y + choice.h / 2 },
-      { x: choice.x - 12,            y: choice.y + choice.h / 2 },
-      { x: choice.x + choice.w / 2,  y: choice.y - 12 },
+      { x: choice.x - 12, y: choice.y + choice.h / 2 },
+      { x: choice.x + choice.w / 2, y: choice.y - 12 },
     ];
-    for (const s of sides) {
-      if (!collidesAt(s.x, s.y, c)) return { x: s.x, y: s.y, furniture: choice };
-    }
+    for (const s of sides) if (!collidesAt(s.x, s.y)) return { x: s.x, y: s.y, furniture: choice };
     return { x: choice.x + choice.w / 2, y: choice.y + choice.h + 12, furniture: choice };
   }
-
   function npcUpdate(c, dt) {
     const ai = c.ai;
     if (c.using) {
       ai.usingFor += dt;
-      // Maybe sing if at bed or mirror
-      ai.songRoll += dt;
-      if (ai.songRoll > 1.0) {
-        ai.songRoll = 0;
-        if (c === alex && c.using.action === 'sleep' && Math.random() < 0.20) singSong('lullaby', charIdx(c));
-        if (c === rose && c.using.action === 'gaze' && Math.random() < 0.30) singSong('villain', charIdx(c));
+      if (Math.random() < dt * 0.15) {
+        if (c === alex && c.using.action === 'sleep') singSong('lullaby', charIdx(c));
+        if (c === rose && c.using.action === 'gaze')  singSong('villain', charIdx(c));
       }
       if (ai.usingFor > (4 + Math.random() * 5)) {
-        stopUsing(c);
-        ai.usingFor = 0;
-        ai.cooldown = 0.5 + Math.random() * 1.5;
-        ai.state = 'idle';
-        ai.target = null;
+        stopUsing(c); ai.usingFor = 0; ai.cooldown = 0.5 + Math.random(); ai.state = 'idle'; ai.target = null;
       }
       return;
     }
-
     if (ai.state === 'idle') {
       ai.cooldown -= dt;
-      if (ai.cooldown <= 0) {
-        ai.target = pickInterest(c);
-        ai.state = 'walking';
-      }
+      if (ai.cooldown <= 0) { ai.target = pickInterest(c); ai.state = ai.target ? 'walking' : 'idle'; if (!ai.target) ai.cooldown = 1; }
       return;
     }
-
     if (ai.state === 'walking') {
-      const speed = 70; // px/s
-      const tx = ai.target.x, ty = ai.target.y;
-      const dx = tx - c.x, dy = ty - c.y;
-      const dist = Math.hypot(dx, dy);
+      const speed = 70;
+      const dx = ai.target.x - c.x, dy = ai.target.y - c.y, dist = Math.hypot(dx, dy);
       if (dist < 5) {
-        // arrived
         const nf = nearestInteractable(c);
-        if (nf && nf === ai.target.furniture) {
-          startUsing(c, nf);
-          c.walking = false;
-        } else {
-          ai.cooldown = 0.5;
-          ai.state = 'idle';
-        }
+        if (nf && nf === ai.target.furniture) { startUsing(c, nf); c.walking = false; }
+        else { ai.cooldown = 0.5; ai.state = 'idle'; }
         return;
       }
-      // try axis-separated movement, with a tiny bias to break ties
       const stepX = Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
       const stepY = Math.sign(dy) * Math.min(Math.abs(dy), speed * dt);
-      // try X then Y; if blocked on one, try perpendicular jitter
       let moved = false;
-      if (Math.abs(stepX) > Math.abs(stepY)) {
-        if (!collidesAt(c.x + stepX, c.y, c)) { c.x += stepX; moved = true; }
-        if (!collidesAt(c.x, c.y + stepY, c)) { c.y += stepY; moved = true; }
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (!collidesAt(c.x + stepX, c.y)) { c.x += stepX; moved = true; }
+        if (!collidesAt(c.x, c.y + stepY)) { c.y += stepY; moved = true; }
       } else {
-        if (!collidesAt(c.x, c.y + stepY, c)) { c.y += stepY; moved = true; }
-        if (!collidesAt(c.x + stepX, c.y, c)) { c.x += stepX; moved = true; }
+        if (!collidesAt(c.x, c.y + stepY)) { c.y += stepY; moved = true; }
+        if (!collidesAt(c.x + stepX, c.y)) { c.x += stepX; moved = true; }
       }
-      if (!moved) {
-        // try sidestep
-        const tries = [[8,0],[-8,0],[0,8],[0,-8]];
-        for (const [ox, oy] of tries) {
-          if (!collidesAt(c.x + ox, c.y + oy, c)) { c.x += ox * dt * 5; c.y += oy * dt * 5; break; }
-        }
-        // give up if stuck
-        ai.cooldown = 1.0; ai.state = 'idle';
-      }
-      // facing
+      if (!moved) { ai.cooldown = 1; ai.state = 'idle'; ai.target = null; }
       if (Math.abs(stepX) > Math.abs(stepY)) c.facing = stepX > 0 ? 'right' : 'left';
-      else c.facing = stepY > 0 ? 'down' : 'up';
-      c.walking = true;
-      c.walkPhase += dt * 8;
+      else if (stepY) c.facing = stepY > 0 ? 'down' : 'up';
+      c.walking = true; c.walkPhase += dt * 8;
     }
   }
 
-  // ------------------ meeko AI ------------------
-  function meekoUpdate(dt) {
-    meeko.purrTimer = Math.max(0, meeko.purrTimer - dt);
-    if (meeko.sitTimer > 0) {
-      meeko.sitTimer -= dt;
-      meeko.walking = false;
-      // occasional purr/meow bubble
-      if (meeko.sitTimer <= 0 && Math.random() < 0.4) {
-        // brief meow
-      }
-      return;
-    }
-    if (!meeko.target) {
-      meeko.cooldown -= dt;
-      if (meeko.cooldown <= 0) {
-        for (let i = 0; i < 12; i++) {
-          const x = 32 + Math.random() * (W - 64);
-          const y = 32 + Math.random() * (H - 64);
-          if (!collidesAt(x, y, meeko)) { meeko.target = { x, y }; break; }
-        }
-        meeko.cooldown = 0;
-      }
-      meeko.walking = false;
-      return;
-    }
-    const dx = meeko.target.x - meeko.x, dy = meeko.target.y - meeko.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist < 5) { meeko.target = null; meeko.sitTimer = 1.2 + Math.random() * 3.5; meeko.walking = false; return; }
-    const speed = 55;
-    const nx = meeko.x + (dx / dist) * speed * dt;
-    const ny = meeko.y + (dy / dist) * speed * dt;
-    let moved = false;
-    if (!collidesAt(nx, meeko.y, meeko)) { meeko.x = nx; moved = true; }
-    if (!collidesAt(meeko.x, ny, meeko)) { meeko.y = ny; moved = true; }
-    if (!moved) { meeko.target = null; meeko.cooldown = 0.4; }
-    meeko.walking = true; meeko.walkPhase += dt * 11;
-    if (Math.abs(dx) > Math.abs(dy)) meeko.facing = dx > 0 ? 'right' : 'left';
-    else meeko.facing = dy > 0 ? 'down' : 'up';
-  }
-
-  function drawMeeko() {
-    const x = meeko.x | 0, y = meeko.y | 0;
-    const bob = meeko.walking ? Math.sin(meeko.walkPhase) * 0.6 : 0;
-    const purr = meeko.purrTimer > 0;
-    // shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.beginPath(); ctx.ellipse(x, y + 1, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
-    const isLeft = meeko.facing === 'left';
-    const isRight = meeko.facing === 'right';
-    const isDown = meeko.facing === 'down';
-    const isUp = meeko.facing === 'up';
-    const hx = x + (isLeft ? -7 : isRight ? 7 : 0);
-    const hy = y - 7 + bob;
-    // tabby grey body w/ darker stripes
-    ctx.fillStyle = '#8a8580';
-    rr(x - 8, y - 8 + bob, 16, 9, 4);
-    // stripes
-    ctx.fillStyle = '#5a554f';
-    for (let i = 0; i < 3; i++) ctx.fillRect(x - 6 + i * 5, y - 7 + bob, 1, 7);
-    // white chest patch (front)
-    ctx.fillStyle = '#fff';
-    if (isDown) rr(x - 3, y - 3 + bob, 6, 4, 2);
-    else if (isLeft) rr(x - 7, y - 4 + bob, 5, 5, 2);
-    else if (isRight) rr(x + 2, y - 4 + bob, 5, 5, 2);
-    // black legs
-    ctx.fillStyle = '#1a1620';
-    ctx.fillRect(x - 7, y - 1 + bob, 2, 2);
-    ctx.fillRect(x + 5, y - 1 + bob, 2, 2);
-    // tail (curls up when sitting)
-    ctx.fillStyle = '#5a554f';
-    if (meeko.walking) {
-      ctx.fillRect(x + (isLeft ? 7 : -11), y - 9 + bob, 4, 2);
-    } else {
-      ctx.beginPath();
-      ctx.arc(x + (isLeft ? 8 : -8), y - 8 + bob, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    // black face
-    if (!isUp) {
-      ctx.fillStyle = '#2a242a';
-      ctx.beginPath(); ctx.arc(hx, hy, 5, 0, Math.PI * 2); ctx.fill();
-    } else {
-      ctx.fillStyle = '#3a3540';
-      ctx.beginPath(); ctx.arc(hx, hy, 5, 0, Math.PI * 2); ctx.fill();
-    }
-    // ears (black)
-    ctx.fillStyle = '#1a1620';
-    ctx.beginPath();
-    ctx.moveTo(hx - 4, hy - 3); ctx.lineTo(hx - 2, hy - 7); ctx.lineTo(hx, hy - 3); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(hx + 1, hy - 3); ctx.lineTo(hx + 3, hy - 7); ctx.lineTo(hx + 5, hy - 3); ctx.fill();
-    // pink inner ear
-    ctx.fillStyle = '#ff8aa8';
-    ctx.fillRect(hx - 2, hy - 5, 1, 2); ctx.fillRect(hx + 2, hy - 5, 1, 2);
-    // eyes (yellow)
-    if (!isUp) {
-      ctx.fillStyle = '#e0c46a';
-      if (isDown) { ctx.fillRect(hx - 3, hy - 1, 1, 2); ctx.fillRect(hx + 2, hy - 1, 1, 2); }
-      else if (isLeft) { ctx.fillRect(hx - 4, hy - 1, 1, 2); ctx.fillRect(hx - 1, hy - 1, 1, 2); }
-      else if (isRight) { ctx.fillRect(hx + 1, hy - 1, 1, 2); ctx.fillRect(hx + 4, hy - 1, 1, 2); }
-      // tiny pink nose
-      ctx.fillStyle = '#ff8aa8';
-      ctx.fillRect(hx, hy + 1, 1, 1);
-    }
-    // purr "♪" when petted
-    if (purr) {
-      ctx.fillStyle = '#ff8aa8';
-      ctx.font = 'bold 10px ui-rounded, system-ui, sans-serif';
-      const t = performance.now();
-      ctx.fillText('♪', x + 6, y - 14 - (Math.sin(t / 250) * 2));
-      ctx.fillText('♪', x + 11, y - 18 - (Math.sin(t / 200) * 2));
-    }
-  }
-
-  // ------------------ player input update ------------------
+  // PLAYER
   function playerUpdate(c, dt) {
     if (c.using) {
-      // any movement key cancels using
-      if (keys['arrowup']||keys['arrowdown']||keys['arrowleft']||keys['arrowright']||keys['w']||keys['a']||keys['s']||keys['d']) {
-        stopUsing(c);
-      }
+      const moving = stickActive || keys['arrowup']||keys['arrowdown']||keys['arrowleft']||keys['arrowright']||keys['w']||keys['a']||keys['s']||keys['d'];
+      if (moving) stopUsing(c);
       return;
     }
     let dx = 0, dy = 0;
@@ -1012,168 +795,278 @@
     if (keys['arrowdown'] || keys['s']) dy += 1;
     if (keys['arrowleft'] || keys['a']) dx -= 1;
     if (keys['arrowright'] || keys['d']) dx += 1;
-    if (dx && dy) { dx *= 0.7071; dy *= 0.7071; }
+    if (stickActive) { dx += stickDelta.x; dy += stickDelta.y; }
+    const mag = Math.hypot(dx, dy);
+    if (mag > 1) { dx /= mag; dy /= mag; }
     const speed = 110;
     const nx = c.x + dx * speed * dt;
     const ny = c.y + dy * speed * dt;
-    if (!collidesAt(nx, c.y, c)) c.x = nx;
-    if (!collidesAt(c.x, ny, c)) c.y = ny;
-
-    if (dx || dy) {
-      c.walking = true;
-      c.walkPhase += dt * 10;
+    if (!collidesAt(nx, c.y)) c.x = nx;
+    if (!collidesAt(c.x, ny)) c.y = ny;
+    if (Math.abs(dx) + Math.abs(dy) > 0.05) {
+      c.walking = true; c.walkPhase += dt * 10;
       if (Math.abs(dx) > Math.abs(dy)) c.facing = dx > 0 ? 'right' : 'left';
       else c.facing = dy > 0 ? 'down' : 'up';
-    } else {
-      c.walking = false;
-    }
+    } else c.walking = false;
   }
 
-  // ------------------ main loop ------------------
-  let last = performance.now();
-  function perfNow() { return performance.now(); }
+  // BUILD MODE
+  let buildMode = false;
+  let heldFurniture = null;
 
+  function toggleBuild() {
+    buildMode = !buildMode;
+    if (!buildMode) heldFurniture = null;
+    document.getElementById('hud-mode').style.display = buildMode ? 'inline-flex' : 'none';
+    document.getElementById('btn-rotate').style.display = buildMode ? 'flex' : 'none';
+    closeAllModals();
+  }
+  function canPlace(f, nx, ny) {
+    if (nx < 32 || ny < 32 || nx + f.w > W - 32 || ny + f.h > H - 32) return false;
+    for (let ty = Math.floor(ny / TILE); ty <= Math.floor((ny + f.h - 1) / TILE); ty++)
+      for (let tx = Math.floor(nx / TILE); tx <= Math.floor((nx + f.w - 1) / TILE); tx++)
+        if (map[ty]?.[tx] !== 0) return false;
+    if (f.solid) for (const o of furniture) {
+      if (o === f || !o.solid) continue;
+      if (nx < o.x + o.w && nx + f.w > o.x && ny < o.y + o.h && ny + f.h > o.y) return false;
+    }
+    return true;
+  }
+  function handleBuildTap(x, y) {
+    if (heldFurniture) {
+      const f = heldFurniture;
+      const newX = Math.round((x - f.w / 2) / 8) * 8;
+      const newY = Math.round((y - f.h / 2) / 8) * 8;
+      if (canPlace(f, newX, newY)) {
+        f.x = newX; f.y = newY;
+        heldFurniture = null;
+        bubble(activeIdx, 'placed!', 1.4);
+        persistDebounced();
+      } else {
+        bubble(activeIdx, "won't fit", 1.4);
+      }
+      return;
+    }
+    for (let i = furniture.length - 1; i >= 0; i--) {
+      const f = furniture[i];
+      if (x >= f.x && x < f.x + f.w && y >= f.y && y < f.y + f.h) {
+        heldFurniture = f;
+        bubble(activeIdx, 'tap to place', 1.4);
+        return;
+      }
+    }
+  }
+  function rotateHeld() {
+    if (!heldFurniture) return;
+    const f = heldFurniture;
+    [f.w, f.h] = [f.h, f.w];
+  }
+
+  // CATALOGUE
+  const CATALOGUE = [
+    { kind: 'plants', name: 'Houseplant', price: 5, w: 32, h: 32, label: 'water plants', short: 'water', action: 'water' },
+    { kind: 'plants', name: 'Tall plant', price: 7, w: 40, h: 40, label: 'water plants', short: 'water', action: 'water' },
+    { kind: 'side-table', name: 'Side table', price: 6, w: 32, h: 32, label: 'set down stuff', short: 'set', action: 'sip' },
+    { kind: 'side-table', name: 'Cocktail table', price: 7, w: 36, h: 36, label: 'sip drink', short: 'sip', action: 'sip' },
+    { kind: 'chair', name: 'Cute chair', price: 8, w: 32, h: 36, label: 'sit & think', short: 'sit', action: 'lounge' },
+    { kind: 'lamp', name: 'Lamp', price: 4, w: 24, h: 24, label: 'flick lamp', short: 'lamp', action: 'lamp', light: true },
+    { kind: 'bookcase', name: 'Bookcase', price: 12, w: 64, h: 24, label: 'pick a book', short: 'read', action: 'read' },
+    { kind: 'mirror', name: 'Wall mirror', price: 5, w: 56, h: 16, label: 'look in mirror', short: 'gaze', action: 'gaze' },
+    { kind: 'rug', name: 'Bedroom rug', price: 6, w: 128, h: 24, decor: true },
+    { kind: 'rug-bal', name: 'Round rug', price: 6, w: 96, h: 64, decor: true },
+    { kind: 'rug-liv', name: 'Big rug', price: 14, w: 192, h: 128, decor: true },
+    { kind: 'rug-bath', name: 'Bath mat', price: 4, w: 96, h: 16, decor: true },
+    { kind: 'coffee', name: 'Coffee table', price: 8, w: 96, h: 36, label: 'flip a magazine', short: 'read', action: 'read' },
+    { kind: 'tv', name: 'Second TV', price: 20, w: 96, h: 36, label: 'watch tv', short: 'tv', action: 'tv' },
+    { kind: 'sofa', name: 'Spare sofa', price: 24, w: 128, h: 56, label: 'cuddle on sofa', short: 'sit', action: 'sit', bothBoost: 4 },
+    { kind: 'bed', name: 'Spare bed', price: 30, w: 96, h: 96, label: 'extra bed', short: 'sleep', action: 'sleep', bothBoost: 6 },
+    { kind: 'bath', name: 'Hot tub', price: 25, w: 96, h: 64, label: 'hot tub', short: 'tub', action: 'bath', bothBoost: 5 },
+    { kind: 'dresser', name: 'Dresser', price: 9, w: 64, h: 32, label: 'change outfit', short: 'dress', action: 'dress' },
+    { kind: 'k-table', name: 'Dinner table', price: 14, w: 128, h: 56, label: 'sit at table', short: 'eat', action: 'eat', bothBoost: 3 },
+    { kind: 'fridge', name: 'Mini fridge', price: 12, w: 40, h: 48, label: 'snack from fridge', short: 'snack', action: 'snack' },
+    { kind: 'stove', name: 'Spare stove', price: 16, w: 56, h: 56, label: 'cook something', short: 'cook', action: 'cook' },
+    { kind: 'sink-k', name: 'Wash basin', price: 6, w: 56, h: 40, label: 'wash up', short: 'wash', action: 'wash' },
+    { kind: 'toilet', name: 'Toilet', price: 8, w: 32, h: 40, label: 'pee real quick', short: 'go', action: 'pee' },
+  ];
+
+  function buyItem(item) {
+    if (totalHearts < item.price) { bubble(activeIdx, 'need more ♥', 1.6); return; }
+    const c = active();
+    const tries = [[20,20],[-20,20],[20,-20],[-20,-20],[40,0],[-40,0],[0,40],[0,-40],[60,0],[-60,0]];
+    let placed = null;
+    const item2 = { ...item, id: 'bought-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), x: 0, y: 0 };
+    item2.solid = !item2.decor;
+    delete item2.price; delete item2.name;
+    for (const [ox, oy] of tries) {
+      const nx = c.x + ox, ny = c.y + oy;
+      if (canPlace(item2, nx, ny)) { item2.x = nx; item2.y = ny; placed = item2; break; }
+    }
+    if (!placed) {
+      // try to find any empty space
+      outer: for (let y = 32; y < H - 32 - item2.h; y += 16) for (let x = 32; x < W - 32 - item2.w; x += 16) {
+        if (canPlace(item2, x, y)) { item2.x = x; item2.y = y; placed = item2; break outer; }
+      }
+    }
+    if (!placed) { bubble(activeIdx, 'no room :(', 1.6); return; }
+    setHearts(totalHearts - item.price);
+    furniture.push(item2);
+    refreshSolids();
+    bubble(activeIdx, item.name + ' bought!', 2.0);
+    spawnHearts(c.x, c.y - 16, 6, '#ffd166');
+    persistDebounced();
+    renderShop();
+  }
+
+  function openShop() { renderShop(); showModal('modal-shop'); }
+  function renderShop() {
+    document.getElementById('shop-hearts').textContent = totalHearts;
+    const grid = document.getElementById('cat-grid');
+    grid.innerHTML = '';
+    CATALOGUE.forEach((item) => {
+      const card = document.createElement('div');
+      card.className = 'cat-item';
+      const cv = document.createElement('canvas');
+      cv.width = 80; cv.height = 60;
+      const pv = document.createElement('div');
+      pv.className = 'preview';
+      pv.appendChild(cv);
+      const c2 = cv.getContext('2d');
+      c2.imageSmoothingEnabled = false;
+      const sc = Math.min(0.7, (cv.width - 8) / item.w, (cv.height - 8) / item.h);
+      drawFurnitureAt(c2, item, (cv.width - item.w * sc) / 2, (cv.height - item.h * sc) / 2, sc);
+      const name = document.createElement('div'); name.className = 'name'; name.textContent = item.name;
+      const price = document.createElement('div'); price.className = 'price'; price.textContent = item.price;
+      const btn = document.createElement('button'); btn.textContent = totalHearts >= item.price ? 'buy' : 'need more';
+      btn.disabled = totalHearts < item.price;
+      btn.addEventListener('click', () => buyItem(item));
+      card.appendChild(pv); card.appendChild(name); card.appendChild(price); card.appendChild(btn);
+      grid.appendChild(card);
+    });
+  }
+
+  document.getElementById('reset-furn').addEventListener('click', () => {
+    if (!confirm('Reset apartment to default furniture? You keep your hearts.')) return;
+    furniture = DEFAULT_FURNITURE.map(o => ({ ...o }));
+    refreshSolids();
+    persistDebounced();
+    renderShop();
+  });
+
+  // WARDROBE
+  function openWardrobe() { renderWardrobe(); showModal('modal-wardrobe'); }
+  function renderWardrobe() {
+    const grid = document.getElementById('wardrobe-grid');
+    grid.innerHTML = '';
+    [['alex', alex], ['rose', rose]].forEach(([key, c]) => {
+      const card = document.createElement('div');
+      card.className = 'who-card';
+      const h3 = document.createElement('h3'); h3.textContent = c.name;
+      card.appendChild(h3);
+      const pv = document.createElement('canvas'); pv.className = 'preview'; pv.width = 100; pv.height = 100;
+      card.appendChild(pv);
+      const refreshPreview = () => {
+        const x = pv.getContext('2d');
+        x.imageSmoothingEnabled = false;
+        x.clearRect(0, 0, pv.width, pv.height);
+        drawCharAt(x, c, pv.width / 2, pv.height - 20, 1.8);
+      };
+      refreshPreview();
+      [['hair','hair'],['shirt','shirt'],['pants','pants'],['skin','skin']].forEach(([k, label]) => {
+        const lab = document.createElement('div'); lab.className = 'opt-label'; lab.textContent = label;
+        const sw = document.createElement('div'); sw.className = 'swatches';
+        COLORS[k].forEach(col => {
+          const s = document.createElement('div'); s.className = 'sw'; s.style.background = col;
+          if (c[k] === col) s.classList.add('active');
+          s.addEventListener('click', () => {
+            c[k] = col;
+            sw.querySelectorAll('.sw').forEach(x => x.classList.remove('active'));
+            s.classList.add('active');
+            refreshPreview();
+            persistDebounced();
+          });
+          sw.appendChild(s);
+        });
+        card.appendChild(lab); card.appendChild(sw);
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // MAIN LOOP
+  let last = performance.now();
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
-
     if (!titleScreenVisible) {
-      // Tab → swap
-      if (keyEdge['tab']) {
-        activeIdx = 1 - activeIdx;
-        // reset any using of the new active so player has control
-        // (don't auto-cancel — let them break it themselves)
-      }
-      // Interact
+      if (keyEdge['tab']) activeIdx = 1 - activeIdx;
       if (keyEdge[' '] || keyEdge['e']) {
-        const c = active();
-        if (c.using) {
-          stopUsing(c);
+        if (buildMode) {
+          // place at center of held furniture, or just no-op
         } else {
-          const f = nearestInteractable(c);
-          if (f) startUsing(c, f);
+          const c = active();
+          if (c.using) stopUsing(c);
+          else { const f = nearestInteractable(c); if (f) startUsing(c, f); }
         }
       }
-      // Sing
-      if (keyEdge['m']) {
-        const c = active();
-        singSong(c.song, charIdx(c));
-      }
-      // B → toggle build mode (mobile: reopen panel if hidden)
-      if (keyEdge['b']) {
-        if (!buildMode.active) enterBuildMode();
-        else if (window.innerWidth < 600 && !buildPanel.classList.contains('show')) buildPanel.classList.add('show');
-        else exitBuildMode();
-      }
-      // X → delete selected furniture in build mode
-      if (keyEdge['x'] && buildMode.active) deleteSelected();
-      // Q → say a random classic line
+      if (keyEdge['m']) singSong(active().song, charIdx(active()));
       if (keyEdge['q']) sayRandom(active());
-      // K → kiss the other one if close
-      if (keyEdge['k']) {
-        const a = active(), o = a === alex ? rose : alex;
-        const dx = a.x - o.x, dy = a.y - o.y;
-        if (Math.hypot(dx, dy) < 32) {
-          bubble(charIdx(a), '*kiss*', 1.5);
-          bubble(charIdx(o), '♥', 1.3);
-          spawnHearts((a.x + o.x) / 2, (a.y + o.y) / 2 - 24, 8, '#ff5f8a');
-          addHearts(3);
-        } else {
-          bubble(charIdx(a), 'too far :(', 1.4);
-        }
-      }
-      // Heart bomb (cheesy gesture)
-      if (keyEdge['h']) {
-        const c = active(), o = c === alex ? rose : alex;
-        bubble(charIdx(c), '♥ ' + o.name + ' ♥', 1.6);
-        spawnHearts(c.x, c.y - 18, 6, '#ff5f8a');
-        addHearts(1);
-      }
-      // Esc closes help
-      if (keyEdge['escape']) helpOverlay.classList.remove('show');
+      if (keyEdge['k']) tryKiss();
+      if (keyEdge['b']) toggleBuild();
+      if (keyEdge['r']) rotateHeld();
+      if (keyEdge['escape']) { closeAllModals(); if (buildMode && heldFurniture) heldFurniture = null; }
 
-      // Update active player (frozen in build mode)
-      if (!buildMode.active) playerUpdate(active(), dt);
-      // Update NPC
-      if (!buildMode.active) npcUpdate(npc(), dt);
-      // Meeko keeps doing her thing
-      if (!buildMode.active) meekoUpdate(dt);
+      playerUpdate(active(), dt);
+      if (!buildMode) npcUpdate(npc(), dt);
+      updateProximity(dt);
 
-      // ttl bubbles
-      for (let i = bubbles.length - 1; i >= 0; i--) {
-        bubbles[i].ttl -= dt;
-        if (bubbles[i].ttl <= 0) bubbles.splice(i, 1);
-      }
-      // particles
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vy += 20 * dt;
-        p.ttl -= dt;
-        if (p.ttl <= 0) particles.splice(i, 1);
-      }
-      // sayings every ~10s per character
-      chars.forEach((c) => {
-        if (c._sayTimer === undefined) c._sayTimer = 4 + Math.random() * 4;
-        c._sayTimer -= dt;
-        if (c._sayTimer <= 0) {
-          if (sayRandom(c)) c._sayTimer = 8 + Math.random() * 5;
-          else c._sayTimer = 1.5;
+      chars.forEach(c => {
+        c.sayTimer -= dt;
+        if (c.sayTimer <= 0) {
+          if (sayRandom(c)) c.sayTimer = 8 + Math.random() * 5;
+          else c.sayTimer = 1.6;
         }
       });
-      // proximity affection
-      const _pdx = alex.x - rose.x, _pdy = alex.y - rose.y;
-      if (Math.hypot(_pdx, _pdy) < 24 && !alex.using && !rose.using) {
-        proximityTimer += dt;
-        if (proximityTimer > 1.6) {
-          proximityTimer = 0;
-          addHearts(1);
-          spawnHearts((alex.x + rose.x) / 2, (alex.y + rose.y) / 2 - 26, 2, '#ff8aa8');
-        }
-      } else proximityTimer = 0;
-    }
 
+      for (let i = bubbles.length - 1; i >= 0; i--) { bubbles[i].ttl -= dt; if (bubbles[i].ttl <= 0) bubbles.splice(i, 1); }
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 22 * dt; p.ttl -= dt;
+        if (p.ttl <= 0) particles.splice(i, 1);
+      }
+
+      if (buildMode && heldFurniture) {
+        const c = active();
+        heldFurniture.x = c.x - heldFurniture.w / 2;
+        heldFurniture.y = c.y - heldFurniture.h / 2;
+      }
+    }
     keyEdge = {};
     render();
     updateHud();
     requestAnimationFrame(loop);
   }
 
-  // ------------------ rendering ------------------
+  // RENDER
   function render() {
-    // floor by room
     rooms.forEach(r => {
       ctx.fillStyle = r.color;
       ctx.fillRect(r.x, r.y, r.w, r.h);
-      // tile pattern lines (subtle)
-      ctx.strokeStyle = 'rgba(0,0,0,0.04)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(0,0,0,0.04)'; ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let gx = r.x; gx <= r.x + r.w; gx += TILE) {
-        ctx.moveTo(gx + 0.5, r.y); ctx.lineTo(gx + 0.5, r.y + r.h);
-      }
-      for (let gy = r.y; gy <= r.y + r.h; gy += TILE) {
-        ctx.moveTo(r.x, gy + 0.5); ctx.lineTo(r.x + r.w, gy + 0.5);
-      }
+      for (let gx = r.x; gx <= r.x + r.w; gx += TILE) { ctx.moveTo(gx + 0.5, r.y); ctx.lineTo(gx + 0.5, r.y + r.h); }
+      for (let gy = r.y; gy <= r.y + r.h; gy += TILE) { ctx.moveTo(r.x, gy + 0.5); ctx.lineTo(r.x + r.w, gy + 0.5); }
       ctx.stroke();
     });
 
-    // decorative furniture (rugs etc) drawn before solid ones
-    furniture.filter(f => f.decor).forEach(drawFurniture);
-
-    // walls — drawn over floor
+    furniture.filter(f => f.decor).forEach(f => drawFurnitureAt(ctx, f, f.x, f.y, 1));
     drawWalls();
 
-    // build a sortable list of solid furniture + characters by Y for proper depth
     const sortable = [];
-    furniture.filter(f => !f.decor).forEach(f => sortable.push({ y: f.y + f.h, draw: () => drawFurniture(f) }));
-    chars.forEach(c => sortable.push({ y: c.y, draw: () => drawChar(c) }));
-    sortable.push({ y: meeko.y, draw: () => drawMeeko() });
+    furniture.filter(f => !f.decor).forEach(f => sortable.push({ y: f.y + f.h, draw: () => drawFurnitureAt(ctx, f, f.x, f.y, 1) }));
+    chars.forEach(c => sortable.push({ y: c.y, draw: () => drawCharAt(ctx, c, c.x, c.y, 1) }));
     sortable.sort((a, b) => a.y - b.y);
     sortable.forEach(s => s.draw());
 
-    // particles
     particles.forEach(p => {
       const t = p.ttl / p.total;
       ctx.globalAlpha = Math.max(0, Math.min(1, t));
@@ -1181,429 +1074,250 @@
       ctx.globalAlpha = 1;
     });
 
-    // bubbles
     drawBubbles();
-
-    // active character indicator
     drawActiveRing(active());
 
-    // build mode overlays
-    if (buildMode.active) drawBuildOverlay();
-  }
-
-  function drawBuildOverlay() {
-    if (buildMode.selected) {
-      const f = buildMode.selected;
-      ctx.strokeStyle = '#ffd166';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 4]);
-      ctx.strokeRect(f.x - 1, f.y - 1, f.w + 2, f.h + 2);
-      ctx.setLineDash([]);
+    if (buildMode) {
+      ctx.fillStyle = 'rgba(255,209,102,0.06)';
+      ctx.fillRect(0, 0, W, H);
     }
-    if (buildMode.moving) {
-      const f = buildMode.moving;
-      ctx.fillStyle = 'rgba(255, 209, 102, 0.2)';
-      ctx.fillRect(f.x, f.y, f.w, f.h);
-      ctx.strokeStyle = '#ffd166';
-      ctx.lineWidth = 2;
+    if (buildMode && heldFurniture) {
+      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
-      ctx.strokeRect(f.x, f.y, f.w, f.h);
+      ctx.strokeRect(heldFurniture.x, heldFurniture.y, heldFurniture.w, heldFurniture.h);
       ctx.setLineDash([]);
-    }
-    if (buildMode.placing && lastPointer) {
-      const item = buildMode.placing;
-      const fx = Math.round((lastPointer.x - item.w / 2) / 4) * 4;
-      const fy = Math.round((lastPointer.y - item.h / 2) / 4) * 4;
-      const ok = canPlaceAt(item, fx, fy);
-      ctx.fillStyle = ok ? 'rgba(108,218,198,0.35)' : 'rgba(214,59,108,0.35)';
-      ctx.fillRect(fx, fy, item.w, item.h);
-      ctx.strokeStyle = ok ? '#6cdac6' : '#d63b6c';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(fx, fy, item.w, item.h);
     }
   }
 
   function drawWalls() {
-    // walls are drawn as soft solid rectangles
-    const wallColor = '#fbf3e3';
-    const trim = '#caaf85';
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
-        const t = map[y][x];
-        if (t === 0) continue;
-        const px = x * TILE, py = y * TILE;
-        if (t === 2) {
-          // outer wall: thicker
-          ctx.fillStyle = wallColor;
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = trim;
-          // bottom edge shading
-          if (y === 0) ctx.fillRect(px, py + TILE - 4, TILE, 4);
-          if (y === MAP_H - 1) ctx.fillRect(px, py, TILE, 4);
-          if (x === 0) ctx.fillRect(px + TILE - 4, py, 4, TILE);
-          if (x === MAP_W - 1) ctx.fillRect(px, py, 4, TILE);
-        } else {
-          ctx.fillStyle = wallColor;
-          ctx.fillRect(px, py, TILE, TILE);
-          ctx.fillStyle = trim;
-          ctx.fillRect(px, py + TILE - 3, TILE, 3);
-        }
-      }
+    const wallColor = '#fbf3e3', trim = '#caaf85';
+    for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
+      const t = map[y][x]; if (!t) continue;
+      const px = x * TILE, py = y * TILE;
+      ctx.fillStyle = wallColor; ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = trim;
+      if (t === 2) {
+        if (y === 0) ctx.fillRect(px, py + TILE - 4, TILE, 4);
+        if (y === MAP_H - 1) ctx.fillRect(px, py, TILE, 4);
+        if (x === 0) ctx.fillRect(px + TILE - 4, py, 4, TILE);
+        if (x === MAP_W - 1) ctx.fillRect(px, py, 4, TILE);
+      } else { ctx.fillRect(px, py + TILE - 3, TILE, 3); }
     }
   }
 
-  // furniture drawing
-  function drawFurniture(f) {
+  function drawFurnitureAt(c, f, x, y, scale) {
     const fn = furnitureDrawers[f.kind];
-    if (fn) fn(f); else { ctx.fillStyle = '#888'; ctx.fillRect(f.x, f.y, f.w, f.h); }
+    c.save();
+    c.translate(x, y);
+    c.scale(scale, scale);
+    if (fn) fn(c, { w: f.w, h: f.h }, f);
+    else { c.fillStyle = '#888'; c.fillRect(0, 0, f.w, f.h); }
+    c.restore();
   }
 
   const furnitureDrawers = {
-    shrine(f) {
-      // base / altar
-      ctx.fillStyle = '#a98260'; rr(f.x, f.y + f.h - 14, f.w, 14, 3, true);
-      ctx.fillStyle = '#7c5734'; ctx.fillRect(f.x + 2, f.y + f.h - 13, f.w - 4, 2);
-      // photo frame
-      ctx.fillStyle = '#dcb15c'; rr(f.x + 6, f.y + 4, f.w - 12, f.h - 22, 3, true);
-      ctx.fillStyle = '#fff7e0'; ctx.fillRect(f.x + 9, f.y + 7, f.w - 18, f.h - 28);
-      // tiny monica silhouette (smaller meeko-ish)
-      const cx = f.x + f.w / 2, cy = f.y + f.h - 24;
-      ctx.fillStyle = '#7d7873'; rr(cx - 5, cy - 2, 10, 6, 2, true);
-      ctx.fillStyle = '#5a554f'; ctx.fillRect(cx - 4, cy - 1, 1, 5); ctx.fillRect(cx + 1, cy - 1, 1, 5);
-      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, cy + 1, 4, 2);
-      ctx.fillStyle = '#2a242a';
-      ctx.beginPath(); ctx.arc(cx + 4, cy - 3, 2.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#1a1620';
-      ctx.beginPath();
-      ctx.moveTo(cx + 2, cy - 5); ctx.lineTo(cx + 3.5, cy - 7); ctx.lineTo(cx + 5, cy - 5); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(cx + 4, cy - 5); ctx.lineTo(cx + 5.5, cy - 7); ctx.lineTo(cx + 7, cy - 5); ctx.fill();
-      // candle on the side
-      ctx.fillStyle = '#fff7e0'; ctx.fillRect(f.x + 2, f.y + f.h - 22, 4, 8);
-      // flame
-      const t = performance.now() / 200;
-      ctx.fillStyle = '#ffd166';
-      ctx.beginPath();
-      ctx.ellipse(f.x + 4, f.y + f.h - 24 + Math.sin(t) * 0.5, 2, 3, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255, 200, 100, 0.25)';
-      ctx.beginPath(); ctx.arc(f.x + 4, f.y + f.h - 24, 8, 0, Math.PI * 2); ctx.fill();
-      // tiny heart on frame
-      drawHeart(cx, f.y + f.h - 14, 3, '#ff5f8a');
-      // little flowers in front
-      ctx.fillStyle = '#ff8aa8';
-      ctx.beginPath(); ctx.arc(f.x + f.w - 6, f.y + f.h - 4, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#caa6ff';
-      ctx.beginPath(); ctx.arc(f.x + f.w - 10, f.y + f.h - 3, 1.5, 0, Math.PI * 2); ctx.fill();
+    bed(c, f) {
+      c.fillStyle = '#7a5b3f'; c.fillRect(-4, 0, f.w + 8, f.h + 4);
+      c.fillStyle = '#fcf6ec'; c.fillRect(0, 4, f.w, f.h - 8);
+      c.fillStyle = '#f7c8d8'; rr(c, 6, 8, Math.max(8, (f.w - 18) / 2), 22, 4);
+      c.fillStyle = '#fde0a4'; rr(c, f.w / 2 + 3, 8, Math.max(8, (f.w - 18) / 2), 22, 4);
+      c.fillStyle = '#cd7d96'; c.fillRect(0, Math.max(0, f.h - 56), f.w, Math.min(50, f.h - 8));
+      drawHeartAt(c, f.w / 2, f.h - 30, 8, '#ec567f');
     },
-    bed(f) {
-      // frame
-      ctx.fillStyle = '#7a5b3f';
-      ctx.fillRect(f.x - 4, f.y, f.w + 8, f.h + 4);
-      // mattress
-      ctx.fillStyle = '#fcf6ec';
-      ctx.fillRect(f.x, f.y + 4, f.w, f.h - 8);
-      // pillows
-      ctx.fillStyle = '#f7c8d8';
-      roundRect(f.x + 6, f.y + 8, (f.w - 18) / 2, 22, 4, true);
-      ctx.fillStyle = '#fde0a4';
-      roundRect(f.x + f.w / 2 + 3, f.y + 8, (f.w - 18) / 2, 22, 4, true);
-      // blanket
-      ctx.fillStyle = '#cd7d96';
-      ctx.fillRect(f.x, f.y + f.h - 56, f.w, 50);
-      ctx.fillStyle = 'rgba(0,0,0,0.06)';
-      for (let i = 0; i < f.w; i += 8) ctx.fillRect(f.x + i, f.y + f.h - 56, 1, 50);
-      // heart on blanket
-      drawHeart(f.x + f.w / 2, f.y + f.h - 30, 8, '#ec567f');
+    dresser(c, f) {
+      c.fillStyle = '#9c7148'; rr(c, 0, 0, f.w, f.h, 4);
+      c.fillStyle = '#7c5734'; c.fillRect(4, 6, f.w - 8, f.h - 12);
+      c.fillStyle = '#3a2b18'; c.fillRect(f.w / 2 - 4, f.h / 2 - 1, 8, 2);
     },
-    dresser(f) {
-      ctx.fillStyle = '#9c7148';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#7c5734';
-      ctx.fillRect(f.x + 4, f.y + 6, f.w - 8, f.h - 12);
-      ctx.fillStyle = '#3a2b18';
-      ctx.fillRect(f.x + f.w / 2 - 4, f.y + f.h / 2 - 1, 8, 2);
+    rug(c, f) { c.fillStyle = '#b78aa3'; rr(c, 0, 0, f.w, f.h, 6); c.fillStyle = '#9c6b88'; for (let i = 0; i < f.w; i += 12) c.fillRect(i, f.h / 2 - 1, 6, 2); },
+    'rug-bal'(c, f) { c.fillStyle = '#7baea0'; rr(c, 0, 0, f.w, f.h, 8); },
+    'rug-liv'(c, f) { c.fillStyle = '#e0a96d'; rr(c, 0, 0, f.w, f.h, 10); c.strokeStyle = '#b07c41'; c.lineWidth = 2; c.strokeRect(8, 8, f.w - 16, f.h - 16); },
+    'rug-bath'(c, f) { c.fillStyle = '#cdb6e6'; rr(c, 0, 0, f.w, f.h, 4); },
+    lamp(c, f) {
+      c.fillStyle = '#e6c075';
+      c.beginPath(); c.moveTo(f.w / 2 - 8, 0); c.lineTo(f.w / 2 + 8, 0);
+      c.lineTo(f.w / 2 + 5, f.h - 6); c.lineTo(f.w / 2 - 5, f.h - 6); c.closePath(); c.fill();
+      c.fillStyle = '#5a4a30'; c.fillRect(f.w / 2 - 1, f.h - 6, 2, 6);
+      c.fillStyle = 'rgba(255, 220, 130, 0.18)'; c.beginPath(); c.arc(f.w / 2, 8, 18, 0, Math.PI * 2); c.fill();
     },
-    rug(f) {
-      ctx.fillStyle = '#b78aa3';
-      roundRect(f.x, f.y, f.w, f.h, 6, true);
-      ctx.fillStyle = '#9c6b88';
-      for (let i = 0; i < f.w; i += 12) ctx.fillRect(f.x + i, f.y + f.h / 2 - 1, 6, 2);
+    plants(c, f) {
+      c.fillStyle = '#5a3b22'; rr(c, 0, f.h - 14, f.w, 14, 3);
+      c.fillStyle = '#3e7a3a';
+      c.beginPath(); c.arc(14, 12, Math.min(14, f.w / 4), 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(f.w - 14, 14, Math.min(12, f.w / 4), 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#5b9d4f'; c.beginPath(); c.arc(f.w / 2, 8, Math.min(10, f.w / 4), 0, Math.PI * 2); c.fill();
     },
-    'rug-bal'(f) {
-      ctx.fillStyle = '#7baea0';
-      roundRect(f.x, f.y, f.w, f.h, 8, true);
+    chair(c, f) {
+      c.fillStyle = '#8d4f3a'; rr(c, 0, 0, f.w, f.h, 4);
+      c.fillStyle = '#a76450'; c.fillRect(4, 4, f.w - 8, f.h - 12);
+      c.fillStyle = '#5b3526'; c.fillRect(0, f.h - 5, f.w, 5);
     },
-    'rug-liv'(f) {
-      ctx.fillStyle = '#e0a96d';
-      roundRect(f.x, f.y, f.w, f.h, 10, true);
-      ctx.strokeStyle = '#b07c41'; ctx.lineWidth = 2;
-      ctx.strokeRect(f.x + 8, f.y + 8, f.w - 16, f.h - 16);
+    'side-table'(c, f) {
+      c.fillStyle = '#c79f7a'; rr(c, 0, 0, f.w, f.h, 4);
+      c.fillStyle = '#6c8ed0'; c.beginPath(); c.arc(f.w / 2, f.h / 2, 5, 0, Math.PI * 2); c.fill();
     },
-    'rug-bath'(f) {
-      ctx.fillStyle = '#cdb6e6';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-    },
-    lamp(f) {
-      ctx.fillStyle = '#e6c075';
-      ctx.beginPath();
-      ctx.moveTo(f.x + f.w / 2 - 8, f.y);
-      ctx.lineTo(f.x + f.w / 2 + 8, f.y);
-      ctx.lineTo(f.x + f.w / 2 + 5, f.y + f.h - 6);
-      ctx.lineTo(f.x + f.w / 2 - 5, f.y + f.h - 6);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#5a4a30';
-      ctx.fillRect(f.x + f.w / 2 - 1, f.y + f.h - 6, 2, 6);
-      // glow
-      ctx.fillStyle = 'rgba(255, 220, 130, 0.18)';
-      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 8, 18, 0, Math.PI * 2); ctx.fill();
-    },
-    plants(f) {
-      ctx.fillStyle = '#5a3b22';
-      roundRect(f.x, f.y + f.h - 14, f.w, 14, 3, true);
-      ctx.fillStyle = '#3e7a3a';
-      ctx.beginPath(); ctx.arc(f.x + 14, f.y + 12, 14, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + f.w - 14, f.y + 14, 12, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#5b9d4f';
-      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 8, 10, 0, Math.PI * 2); ctx.fill();
-    },
-    chair(f) {
-      ctx.fillStyle = '#8d4f3a';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#a76450';
-      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 12);
-      ctx.fillStyle = '#5b3526';
-      ctx.fillRect(f.x, f.y + f.h - 5, f.w, 5);
-    },
-    'side-table'(f) {
-      ctx.fillStyle = '#c79f7a';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#6c8ed0';
-      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + f.h / 2, 5, 0, Math.PI * 2); ctx.fill();
-    },
-    sofa(f) {
-      ctx.fillStyle = '#5a6acb';
-      roundRect(f.x, f.y, f.w, f.h, 8, true);
-      ctx.fillStyle = '#4150a0';
-      ctx.fillRect(f.x, f.y, f.w, 14);
-      // cushions
-      ctx.fillStyle = '#7280da';
+    sofa(c, f) {
+      c.fillStyle = '#5a6acb'; rr(c, 0, 0, f.w, f.h, 8);
+      c.fillStyle = '#4150a0'; c.fillRect(0, 0, f.w, 14);
+      c.fillStyle = '#7280da';
       const cw = (f.w - 12) / 3;
-      for (let i = 0; i < 3; i++) roundRect(f.x + 4 + i * (cw + 2), f.y + 18, cw, f.h - 24, 4, true);
-      // legs
-      ctx.fillStyle = '#2b2b2b';
-      ctx.fillRect(f.x + 2, f.y + f.h, 4, 4);
-      ctx.fillRect(f.x + f.w - 6, f.y + f.h, 4, 4);
+      for (let i = 0; i < 3; i++) rr(c, 4 + i * (cw + 2), 18, cw, Math.max(10, f.h - 24), 4);
+      c.fillStyle = '#2b2b2b'; c.fillRect(2, f.h, 4, 4); c.fillRect(f.w - 6, f.h, 4, 4);
     },
-    coffee(f) {
-      ctx.fillStyle = '#7e5a3a';
-      roundRect(f.x, f.y, f.w, f.h, 5, true);
-      ctx.fillStyle = '#5a3f25';
-      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8);
-      // book on top
-      ctx.fillStyle = '#cf6764';
-      ctx.fillRect(f.x + 16, f.y + 8, 22, 10);
+    coffee(c, f) {
+      c.fillStyle = '#7e5a3a'; rr(c, 0, 0, f.w, f.h, 5);
+      c.fillStyle = '#5a3f25'; c.fillRect(4, 4, f.w - 8, f.h - 8);
+      c.fillStyle = '#cf6764'; c.fillRect(16, 8, Math.min(22, f.w - 30), 10);
     },
-    tv(f) {
-      ctx.fillStyle = '#222';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#5cdcff';
-      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8);
-      // scanlines
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      for (let i = 0; i < f.h - 8; i += 4) ctx.fillRect(f.x + 4, f.y + 4 + i, f.w - 8, 1);
-      // stand
-      ctx.fillStyle = '#444';
-      ctx.fillRect(f.x + f.w / 2 - 6, f.y + f.h, 12, 4);
+    tv(c, f) {
+      c.fillStyle = '#222'; rr(c, 0, 0, f.w, f.h, 4);
+      c.fillStyle = '#5cdcff'; c.fillRect(4, 4, f.w - 8, f.h - 8);
+      c.fillStyle = 'rgba(255,255,255,0.18)'; for (let i = 0; i < f.h - 8; i += 4) c.fillRect(4, 4 + i, f.w - 8, 1);
+      c.fillStyle = '#444'; c.fillRect(f.w / 2 - 6, f.h, 12, 4);
     },
-    bookcase(f) {
-      ctx.fillStyle = '#7c5a3a';
-      ctx.fillRect(f.x, f.y, f.w, f.h);
-      const colors = ['#cf6764','#dcb15c','#5fa0c8','#7eaf6a','#b67dca','#e0875f'];
-      for (let i = 0; i < 8; i++) {
-        ctx.fillStyle = colors[i % colors.length];
-        ctx.fillRect(f.x + 3 + i * 7, f.y + 3, 6, f.h - 6);
-      }
+    bookcase(c, f) {
+      c.fillStyle = '#7c5a3a'; c.fillRect(0, 0, f.w, f.h);
+      const cs = ['#cf6764','#dcb15c','#5fa0c8','#7eaf6a','#b67dca','#e0875f'];
+      const n = Math.floor((f.w - 6) / 7);
+      for (let i = 0; i < n; i++) { c.fillStyle = cs[i % cs.length]; c.fillRect(3 + i * 7, 3, 6, f.h - 6); }
     },
-    fridge(f) {
-      ctx.fillStyle = '#e9eef4';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.strokeStyle = '#a3aebf'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(f.x, f.y + f.h * 0.4); ctx.lineTo(f.x + f.w, f.y + f.h * 0.4); ctx.stroke();
-      ctx.fillStyle = '#cad3df';
-      ctx.fillRect(f.x + f.w - 6, f.y + 6, 3, 8);
-      ctx.fillRect(f.x + f.w - 6, f.y + f.h * 0.4 + 6, 3, 8);
-      // magnet hearts
-      drawHeart(f.x + 12, f.y + 12, 6, '#ff5f8a');
-      drawHeart(f.x + 28, f.y + 18, 5, '#ffd166');
+    fridge(c, f) {
+      c.fillStyle = '#e9eef4'; rr(c, 0, 0, f.w, f.h, 4);
+      c.strokeStyle = '#a3aebf'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(0, f.h * 0.4); c.lineTo(f.w, f.h * 0.4); c.stroke();
+      c.fillStyle = '#cad3df'; c.fillRect(f.w - 6, 6, 3, 8); c.fillRect(f.w - 6, f.h * 0.4 + 6, 3, 8);
+      drawHeartAt(c, 12, 12, 5, '#ff5f8a');
     },
-    stove(f) {
-      ctx.fillStyle = '#3b3b3b';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#7c7c7c';
-      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 18);
-      ctx.fillStyle = '#222';
-      ctx.beginPath(); ctx.arc(f.x + 14, f.y + 14, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + f.w - 14, f.y + 14, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + 14, f.y + 30, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + f.w - 14, f.y + 30, 5, 0, Math.PI * 2); ctx.fill();
+    stove(c, f) {
+      c.fillStyle = '#3b3b3b'; rr(c, 0, 0, f.w, f.h, 4);
+      c.fillStyle = '#7c7c7c'; c.fillRect(4, 4, f.w - 8, f.h - 18);
+      c.fillStyle = '#222';
+      c.beginPath(); c.arc(14, 14, 5, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(f.w - 14, 14, 5, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(14, Math.min(30, f.h - 14), 5, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(f.w - 14, Math.min(30, f.h - 14), 5, 0, Math.PI * 2); c.fill();
     },
-    'sink-k'(f) {
-      ctx.fillStyle = '#cad3df';
-      roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#8a96a8';
-      roundRect(f.x + 4, f.y + 4, f.w - 8, f.h - 12, 3, true);
-      ctx.fillStyle = '#666';
-      ctx.fillRect(f.x + f.w / 2 - 1, f.y + 4, 2, 8);
+    'sink-k'(c, f) {
+      c.fillStyle = '#cad3df'; rr(c, 0, 0, f.w, f.h, 4);
+      c.fillStyle = '#8a96a8'; rr(c, 4, 4, f.w - 8, f.h - 12, 3);
+      c.fillStyle = '#666'; c.fillRect(f.w / 2 - 1, 4, 2, 8);
     },
-    'k-table'(f) {
-      ctx.fillStyle = '#a98260';
-      roundRect(f.x, f.y, f.w, f.h, 6, true);
-      ctx.fillStyle = '#8a6748';
-      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8);
-      // two plates
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(f.x + 28, f.y + f.h / 2, 10, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + f.w - 28, f.y + f.h / 2, 10, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#dcb15c';
-      ctx.beginPath(); ctx.arc(f.x + 28, f.y + f.h / 2, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#cf6764';
-      ctx.beginPath(); ctx.arc(f.x + f.w - 28, f.y + f.h / 2, 4, 0, Math.PI * 2); ctx.fill();
+    'k-table'(c, f) {
+      c.fillStyle = '#a98260'; rr(c, 0, 0, f.w, f.h, 6);
+      c.fillStyle = '#8a6748'; c.fillRect(4, 4, f.w - 8, f.h - 8);
+      c.fillStyle = '#fff';
+      c.beginPath(); c.arc(28, f.h / 2, 8, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(f.w - 28, f.h / 2, 8, 0, Math.PI * 2); c.fill();
     },
-    bath(f) {
-      ctx.fillStyle = '#d0e9eb';
-      roundRect(f.x, f.y, f.w, f.h, 14, true);
-      ctx.fillStyle = '#7fc2c7';
-      roundRect(f.x + 6, f.y + 6, f.w - 12, f.h - 12, 10, true);
-      // bubbles
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.beginPath(); ctx.arc(f.x + 24, f.y + 24, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + 50, f.y + 36, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + 78, f.y + 22, 6, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + 92, f.y + 38, 4, 0, Math.PI * 2); ctx.fill();
+    bath(c, f) {
+      c.fillStyle = '#d0e9eb'; rr(c, 0, 0, f.w, f.h, 14);
+      c.fillStyle = '#7fc2c7'; rr(c, 6, 6, f.w - 12, f.h - 12, 10);
+      c.fillStyle = 'rgba(255,255,255,0.7)';
+      c.beginPath(); c.arc(24, 24, 5, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(50, 36, 4, 0, Math.PI * 2); c.fill();
+      if (f.w > 100) { c.beginPath(); c.arc(78, 22, 6, 0, Math.PI * 2); c.fill(); }
     },
-    mirror(f) {
-      // wall mirror
-      ctx.fillStyle = '#7a6a8c';
-      ctx.fillRect(f.x - 2, f.y - 2, f.w + 4, f.h + 4);
-      ctx.fillStyle = '#cee3f0';
-      ctx.fillRect(f.x, f.y, f.w, f.h);
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillRect(f.x + 4, f.y + 3, 12, 4);
+    mirror(c, f) {
+      c.fillStyle = '#7a6a8c'; c.fillRect(-2, -2, f.w + 4, f.h + 4);
+      c.fillStyle = '#cee3f0'; c.fillRect(0, 0, f.w, f.h);
+      c.fillStyle = 'rgba(255,255,255,0.6)'; c.fillRect(4, 3, 12, 4);
     },
-    'sink-b'(f) {
-      ctx.fillStyle = '#e9eef4';
-      roundRect(f.x, f.y, f.w, f.h, 5, true);
-      ctx.fillStyle = '#8a96a8';
-      roundRect(f.x + 6, f.y + 6, f.w - 12, f.h - 14, 3, true);
-      ctx.fillStyle = '#666';
-      ctx.fillRect(f.x + f.w / 2 - 1, f.y + 4, 2, 8);
+    'sink-b'(c, f) {
+      c.fillStyle = '#e9eef4'; rr(c, 0, 0, f.w, f.h, 5);
+      c.fillStyle = '#8a96a8'; rr(c, 6, 6, f.w - 12, f.h - 14, 3);
+      c.fillStyle = '#666'; c.fillRect(f.w / 2 - 1, 4, 2, 8);
     },
-    toilet(f) {
-      ctx.fillStyle = '#f3f3f3';
-      roundRect(f.x, f.y + f.h - 22, f.w, 22, 8, true);
-      roundRect(f.x + 4, f.y, f.w - 8, 14, 4, true);
+    toilet(c, f) {
+      c.fillStyle = '#f3f3f3';
+      rr(c, 0, f.h - 22, f.w, 22, 8);
+      rr(c, 4, 0, f.w - 8, Math.max(8, f.h - 22), 4);
     },
   };
 
-  // ---- character drawing ----
-  function drawChar(c) {
-    const x = c.x | 0, y = c.y | 0;
-    const bob = c.walking ? Math.sin(c.walkPhase) * 1.2 : 0;
-    // shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.beginPath();
-    ctx.ellipse(x, y + 2, 9, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
+  function rr(c, x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.fill();
+  }
 
-    const headY = y - 22 + bob;
-    const bodyY = y - 14 + bob;
+  function drawHeartAt(c, cx, cy, size, color) {
+    c.fillStyle = color;
+    c.beginPath();
+    const s = size;
+    c.moveTo(cx, cy + s * 0.4);
+    c.bezierCurveTo(cx, cy - s * 0.2, cx - s, cy - s * 0.2, cx - s, cy + s * 0.1);
+    c.bezierCurveTo(cx - s, cy + s * 0.5, cx, cy + s * 0.9, cx, cy + s * 1.0);
+    c.bezierCurveTo(cx, cy + s * 0.9, cx + s, cy + s * 0.5, cx + s, cy + s * 0.1);
+    c.bezierCurveTo(cx + s, cy - s * 0.2, cx, cy - s * 0.2, cx, cy + s * 0.4);
+    c.fill();
+  }
+  function drawHeart(cx, cy, s, color) { drawHeartAt(ctx, cx, cy, s, color); }
 
-    // legs
-    ctx.fillStyle = c.pants;
-    if (c.walking) {
-      const ph = Math.sin(c.walkPhase) * 2;
-      ctx.fillRect(x - 5, y - 6 + bob, 4, 8 + ph);
-      ctx.fillRect(x + 1, y - 6 + bob, 4, 8 - ph);
+  function drawCharAt(c, ch, x, y, scale) {
+    c.save();
+    c.translate(x, y);
+    c.scale(scale, scale);
+    const bob = ch.walking ? Math.sin(ch.walkPhase) * 1.2 : 0;
+    c.fillStyle = 'rgba(0,0,0,0.18)';
+    c.beginPath(); c.ellipse(0, 2, 9, 3, 0, 0, Math.PI * 2); c.fill();
+    const headY = -22 + bob, bodyY = -14 + bob;
+    c.fillStyle = ch.pants;
+    if (ch.walking) {
+      const ph = Math.sin(ch.walkPhase) * 2;
+      c.fillRect(-5, -6 + bob, 4, 8 + ph);
+      c.fillRect(1, -6 + bob, 4, 8 - ph);
+    } else { c.fillRect(-5, -6 + bob, 4, 8); c.fillRect(1, -6 + bob, 4, 8); }
+    c.fillStyle = '#1c1a26'; c.fillRect(-5, 1 + bob, 4, 2); c.fillRect(1, 1 + bob, 4, 2);
+
+    c.fillStyle = ch.shirt; rr(c, -7, bodyY, 14, 12, 3);
+    c.fillRect(-9, bodyY + 2, 3, 7); c.fillRect(6, bodyY + 2, 3, 7);
+    c.fillStyle = ch.skin;
+    c.beginPath(); c.arc(-7, bodyY + 9, 2, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(7, bodyY + 9, 2, 0, Math.PI * 2); c.fill();
+
+    c.fillStyle = ch.hair;
+    if (ch.facing !== 'up') {
+      c.beginPath(); c.ellipse(0, headY + 4, 10, 11, 0, 0, Math.PI * 2); c.fill();
+      c.fillRect(-10, headY + 2, 4, 12); c.fillRect(6, headY + 2, 4, 12);
     } else {
-      ctx.fillRect(x - 5, y - 6 + bob, 4, 8);
-      ctx.fillRect(x + 1, y - 6 + bob, 4, 8);
-    }
-    // shoes
-    ctx.fillStyle = '#1c1a26';
-    ctx.fillRect(x - 5, y + 1 + bob, 4, 2);
-    ctx.fillRect(x + 1, y + 1 + bob, 4, 2);
-
-    // body
-    ctx.fillStyle = c.shirt;
-    roundRect(x - 7, bodyY, 14, 12, 3, true);
-    // sleeves
-    ctx.fillRect(x - 9, bodyY + 2, 3, 7);
-    ctx.fillRect(x + 6, bodyY + 2, 3, 7);
-
-    // hands (skin)
-    ctx.fillStyle = c.skin;
-    ctx.beginPath(); ctx.arc(x - 7, bodyY + 9, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x + 7, bodyY + 9, 2, 0, Math.PI * 2); ctx.fill();
-
-    // hair back layer
-    ctx.fillStyle = c.hair;
-    if (c.facing === 'down' || c.facing === 'left' || c.facing === 'right') {
-      ctx.beginPath();
-      ctx.ellipse(x, headY + 4, 10, 11, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // long hair side panels
-      ctx.fillRect(x - 10, headY + 2, 4, 12);
-      ctx.fillRect(x + 6, headY + 2, 4, 12);
-    } else {
-      // facing up: full back of head
-      ctx.beginPath();
-      ctx.ellipse(x, headY + 2, 9, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
+      c.beginPath(); c.ellipse(0, headY + 2, 9, 10, 0, 0, Math.PI * 2); c.fill();
     }
 
-    // head
-    ctx.fillStyle = c.skin;
-    ctx.beginPath();
-    ctx.ellipse(x, headY + 2, 7, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
+    c.fillStyle = ch.skin;
+    c.beginPath(); c.ellipse(0, headY + 2, 7, 8, 0, 0, Math.PI * 2); c.fill();
 
-    // hair front (bangs)
-    ctx.fillStyle = c.hair;
-    if (c.facing !== 'up') {
-      ctx.beginPath();
-      ctx.ellipse(x, headY - 2, 8, 5, 0, Math.PI, Math.PI * 2);
-      ctx.fill();
-      // a little fringe
-      ctx.fillRect(x - 6, headY - 2, 12, 3);
+    c.fillStyle = ch.hair;
+    if (ch.facing !== 'up') {
+      c.beginPath(); c.ellipse(0, headY - 2, 8, 5, 0, Math.PI, Math.PI * 2); c.fill();
+      c.fillRect(-6, headY - 2, 12, 3);
     }
 
-    // eyes
-    if (c.facing !== 'up') {
-      ctx.fillStyle = '#1c1726';
-      let ex1 = x - 3, ex2 = x + 2, ey = headY + 2;
-      if (c.facing === 'left') { ex1 = x - 4; ex2 = x - 1; }
-      if (c.facing === 'right') { ex1 = x + 1; ex2 = x + 4; }
-      ctx.fillRect(ex1, ey, 1, 2);
-      ctx.fillRect(ex2, ey, 1, 2);
-      // little blush for cute
-      ctx.fillStyle = 'rgba(255,120,140,0.5)';
-      ctx.fillRect(x - 5, ey + 3, 2, 1);
-      ctx.fillRect(x + 4, ey + 3, 2, 1);
+    if (ch.facing !== 'up') {
+      c.fillStyle = '#1c1726';
+      let ex1 = -3, ex2 = 2, ey = headY + 2;
+      if (ch.facing === 'left') { ex1 = -4; ex2 = -1; }
+      if (ch.facing === 'right') { ex1 = 1; ex2 = 4; }
+      c.fillRect(ex1, ey, 1, 2); c.fillRect(ex2, ey, 1, 2);
+      c.fillStyle = 'rgba(255,120,140,0.5)';
+      c.fillRect(-5, ey + 3, 2, 1); c.fillRect(4, ey + 3, 2, 1);
     }
-
-    // sleeping z
-    if (c.using && c.using.action === 'sleep') {
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px ui-rounded, system-ui, sans-serif';
-      ctx.fillText('z', x + 8, headY - 6 - (Math.sin(perfNow() / 300) * 2));
-      ctx.fillText('z', x + 12, headY - 12 - (Math.sin(perfNow() / 250) * 2));
+    if (ch.using && ch.using.action === 'sleep') {
+      c.fillStyle = '#fff';
+      c.font = 'bold 12px ui-rounded, system-ui, sans-serif';
+      c.fillText('z', 8, headY - 6 - (Math.sin(performance.now() / 300) * 2));
+      c.fillText('z', 12, headY - 12 - (Math.sin(performance.now() / 250) * 2));
     }
+    c.restore();
   }
 
   function drawActiveRing(c) {
-    const t = perfNow() / 600;
+    const t = performance.now() / 600;
     ctx.strokeStyle = `rgba(255,209,102,${0.5 + 0.3 * Math.sin(t)})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1611,34 +1325,9 @@
     ctx.stroke();
   }
 
-  function drawHeart(cx, cy, size, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    const s = size;
-    ctx.moveTo(cx, cy + s * 0.4);
-    ctx.bezierCurveTo(cx, cy - s * 0.2, cx - s, cy - s * 0.2, cx - s, cy + s * 0.1);
-    ctx.bezierCurveTo(cx - s, cy + s * 0.5, cx, cy + s * 0.9, cx, cy + s * 1.0);
-    ctx.bezierCurveTo(cx, cy + s * 0.9, cx + s, cy + s * 0.5, cx + s, cy + s * 0.1);
-    ctx.bezierCurveTo(cx + s, cy - s * 0.2, cx, cy - s * 0.2, cx, cy + s * 0.4);
-    ctx.fill();
-  }
-
-  function roundRect(x, y, w, h, r, fill) {
-    if (w < 2 * r) r = w / 2;
-    if (h < 2 * r) r = h / 2;
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    if (fill) ctx.fill(); else ctx.stroke();
-  }
-
   function wrapText(text, maxW) {
     const words = text.split(/\s+/);
-    const lines = [];
-    let cur = '';
+    const lines = []; let cur = '';
     for (const w of words) {
       const test = cur ? cur + ' ' + w : w;
       if (ctx.measureText(test).width <= maxW) cur = test;
@@ -1649,18 +1338,17 @@
   }
 
   function drawBubbles() {
-    const MAX_W = 180;
+    const MAX_W = 200;
     chars.forEach((c, i) => {
       const owned = bubbles.filter(b => b.ownerIdx === i);
       let offset = 0;
-      owned.forEach((b) => {
+      owned.forEach(b => {
         const isAction = b.text.startsWith('*') && b.text.endsWith('*') && b.text.length > 2;
         const text = isAction ? b.text.slice(1, -1) : b.text;
         const fontSpec = (isAction ? 'italic ' : '') + '600 12px ui-rounded, system-ui, sans-serif';
         ctx.font = fontSpec;
         const lines = wrapText(text, MAX_W);
-        let maxW = 0;
-        lines.forEach(l => maxW = Math.max(maxW, ctx.measureText(l).width));
+        let maxW = 0; lines.forEach(l => maxW = Math.max(maxW, ctx.measureText(l).width));
         const padX = 8, padY = 6, lineH = 14;
         const bw = Math.max(40, maxW + padX * 2);
         const bh = padY * 2 + lineH * lines.length;
@@ -1668,674 +1356,68 @@
         const bx = x - bw / 2, by = y - bh;
         const fade = Math.min(1, b.ttl / 0.4);
         ctx.globalAlpha = fade;
-        const isVillain = b.tone === 'menacing';
-        const isLull = b.tone === 'soft';
+        const isVillain = b.tone === 'menacing', isLull = b.tone === 'soft';
         const fillCol = isVillain ? '#3a0f1c' : (isLull ? '#fff7e0' : '#fff');
         const textCol = isVillain ? '#ffb1c1' : '#1f1729';
         const strokeCol = isVillain ? '#9c2c4e' : 'rgba(0,0,0,0.18)';
-        ctx.fillStyle = fillCol;
-        ctx.strokeStyle = strokeCol;
-        ctx.lineWidth = 1.5;
-        roundRect(bx, by, bw, bh, 8, true);
-        roundRect(bx, by, bw, bh, 8, false);
+        ctx.fillStyle = fillCol; ctx.strokeStyle = strokeCol; ctx.lineWidth = 1.5;
+        rrStroke(bx, by, bw, bh, 8);
         ctx.beginPath();
-        ctx.moveTo(x - 3, by + bh);
-        ctx.lineTo(x + 3, by + bh);
-        ctx.lineTo(x, by + bh + 5);
-        ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        ctx.fillStyle = textCol;
-        ctx.textBaseline = 'top';
-        ctx.font = fontSpec;
-        lines.forEach((line, li) => {
-          ctx.fillText(line, bx + padX, by + padY + li * lineH);
-        });
+        ctx.moveTo(x - 3, by + bh); ctx.lineTo(x + 3, by + bh); ctx.lineTo(x, by + bh + 5);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = textCol; ctx.textBaseline = 'top'; ctx.font = fontSpec;
+        lines.forEach((line, li) => ctx.fillText(line, bx + padX, by + padY + li * lineH));
         ctx.textBaseline = 'alphabetic';
         offset += bh + 6;
       });
       ctx.globalAlpha = 1;
     });
   }
+  function rrStroke(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.fill(); ctx.stroke();
+  }
 
-  // ------------------ HUD ------------------
+  // HUD
   function updateHud() {
     const a = active();
     document.getElementById('active-name').textContent = a.name + (a.using ? ' · ' + a.using.short : '');
-    document.getElementById('active-swatch').className = 'swatch ' + (activeIdx === 0 ? 'alex' : 'rose');
+    document.getElementById('active-swatch').style.background = a.hair;
     const r = roomAt(a.x, a.y);
     document.getElementById('room-name').textContent = r ? r.name : '—';
+    document.getElementById('hearts').textContent = totalHearts;
 
-    // interact prompt
     const promptEl = document.getElementById('prompt');
-    if (a.using) {
+    if (buildMode) {
       promptEl.classList.add('show');
-      promptEl.innerHTML = `<kbd>SPACE</kbd>get up`;
-    } else {
-      const f = nearestInteractable(a);
-      if (f) {
-        promptEl.classList.add('show');
-        promptEl.innerHTML = `<kbd>SPACE</kbd>${f.label}`;
-      } else {
-        promptEl.classList.remove('show');
-      }
+      promptEl.innerHTML = heldFurniture
+        ? `<kbd>TAP</kbd>place · <kbd>R</kbd>rotate · <kbd>B</kbd>exit`
+        : `<kbd>TAP</kbd>pick up furniture · <kbd>B</kbd>exit`;
+      return;
     }
+    if (a.using) { promptEl.classList.add('show'); promptEl.innerHTML = `<kbd>SPACE</kbd>get up`; return; }
+    const f = nearestInteractable(a);
+    if (f) { promptEl.classList.add('show'); promptEl.innerHTML = `<kbd>SPACE</kbd>${f.label}`; }
+    else promptEl.classList.remove('show');
   }
 
-  // ------------------ title screen previews ------------------
+  // TITLE PREVIEWS
   function drawTitlePreview(canvasId, c) {
     const cv = document.getElementById(canvasId);
     const x = cv.getContext('2d');
+    x.imageSmoothingEnabled = false;
     x.clearRect(0, 0, cv.width, cv.height);
-    // Save real ctx, swap to preview ctx
-    const realCtx = ctx;
-    // We'll draw using simple inline calls
-    const ox = cv.width / 2, oy = cv.height - 18;
-    x.fillStyle = 'rgba(0,0,0,0.18)';
-    x.beginPath(); x.ellipse(ox, oy + 2, 14, 5, 0, 0, Math.PI * 2); x.fill();
-    x.fillStyle = c.pants; x.fillRect(ox - 7, oy - 10, 5, 12); x.fillRect(ox + 2, oy - 10, 5, 12);
-    x.fillStyle = c.shirt;
-    rr(x, ox - 11, oy - 22, 22, 18, 4);
-    x.fillStyle = c.hair;
-    x.beginPath(); x.ellipse(ox, oy - 36, 16, 18, 0, 0, Math.PI * 2); x.fill();
-    x.fillRect(ox - 16, oy - 36, 6, 22); x.fillRect(ox + 10, oy - 36, 6, 22);
-    x.fillStyle = c.skin;
-    x.beginPath(); x.ellipse(ox, oy - 36, 11, 13, 0, 0, Math.PI * 2); x.fill();
-    x.fillStyle = c.hair;
-    x.beginPath(); x.ellipse(ox, oy - 42, 12, 8, 0, Math.PI, Math.PI * 2); x.fill();
-    x.fillStyle = '#1c1726';
-    x.fillRect(ox - 4, oy - 36, 2, 3); x.fillRect(ox + 2, oy - 36, 2, 3);
-    x.fillStyle = 'rgba(255,120,140,0.6)';
-    x.fillRect(ox - 6, oy - 32, 3, 1); x.fillRect(ox + 3, oy - 32, 3, 1);
-  }
-  function rr(x, ax, ay, w, h, r) {
-    x.beginPath();
-    x.moveTo(ax + r, ay);
-    x.arcTo(ax + w, ay, ax + w, ay + h, r);
-    x.arcTo(ax + w, ay + h, ax, ay + h, r);
-    x.arcTo(ax, ay + h, ax, ay, r);
-    x.arcTo(ax, ay, ax + w, ay, r);
-    x.fill();
+    drawCharAt(x, c, cv.width / 2, cv.height - 18, 1.6);
   }
   drawTitlePreview('t-alex', alex);
   drawTitlePreview('t-rose', rose);
 
-  // ------------------ extra furniture drawers ------------------
-  Object.assign(furnitureDrawers, {
-    microwave(f) {
-      ctx.fillStyle = '#3a3a3a'; roundRect(f.x, f.y, f.w, f.h, 3, true);
-      ctx.fillStyle = '#1a1a1a'; ctx.fillRect(f.x + 4, f.y + 4, f.w - 16, f.h - 8);
-      ctx.fillStyle = '#5cdcff'; ctx.fillRect(f.x + 5, f.y + 5, f.w - 18, f.h - 10);
-      ctx.fillStyle = '#888'; ctx.fillRect(f.x + f.w - 10, f.y + 6, 6, 4);
-      ctx.fillRect(f.x + f.w - 10, f.y + 14, 6, 2);
-    },
-    kettle(f) {
-      ctx.fillStyle = '#d4d6da'; roundRect(f.x, f.y + 4, f.w, f.h - 4, 5, true);
-      ctx.fillStyle = '#888'; ctx.fillRect(f.x + 4, f.y, f.w - 8, 5);
-      ctx.fillStyle = '#3a3a3a'; ctx.fillRect(f.x + f.w / 2 - 1, f.y + 8, 2, 4);
-      ctx.fillStyle = '#888'; ctx.fillRect(f.x - 3, f.y + 10, 4, 8);
-    },
-    dishwasher(f) {
-      ctx.fillStyle = '#a3aebf'; roundRect(f.x, f.y, f.w, f.h, 3, true);
-      ctx.fillStyle = '#cad3df'; ctx.fillRect(f.x + 3, f.y + 3, f.w - 6, f.h - 6);
-      ctx.fillStyle = '#888'; ctx.fillRect(f.x + 5, f.y + 5, f.w - 10, 4);
-      ctx.fillStyle = '#222'; ctx.fillRect(f.x + f.w / 2 - 6, f.y + f.h - 8, 12, 2);
-    },
-    island(f) {
-      ctx.fillStyle = '#a98260'; roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#fcf6ec'; ctx.fillRect(f.x + 2, f.y + 2, f.w - 4, f.h - 4);
-      ctx.fillStyle = '#e9c66a'; ctx.beginPath(); ctx.arc(f.x + 16, f.y + f.h / 2, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#cf6764'; ctx.fillRect(f.x + f.w - 24, f.y + f.h / 2 - 4, 16, 8);
-    },
-    'single-bed'(f) {
-      ctx.fillStyle = '#7a5b3f'; ctx.fillRect(f.x - 3, f.y, f.w + 6, f.h + 3);
-      ctx.fillStyle = '#fcf6ec'; ctx.fillRect(f.x, f.y + 3, f.w, f.h - 6);
-      ctx.fillStyle = '#f7c8d8'; roundRect(f.x + 4, f.y + 6, f.w - 8, 14, 3, true);
-      ctx.fillStyle = '#cd7d96'; ctx.fillRect(f.x, f.y + f.h - 38, f.w, 32);
-    },
-    'bunk-bed'(f) {
-      ctx.fillStyle = '#7a5b3f'; ctx.fillRect(f.x - 3, f.y, f.w + 6, f.h + 3);
-      ctx.fillStyle = '#fcf6ec';
-      ctx.fillRect(f.x, f.y + 3, f.w, f.h / 2 - 6);
-      ctx.fillRect(f.x, f.y + f.h / 2 + 3, f.w, f.h / 2 - 6);
-      ctx.fillStyle = '#cd7d96';
-      ctx.fillRect(f.x, f.y + f.h / 2 - 28, f.w, 22);
-      ctx.fillRect(f.x, f.y + f.h - 28, f.w, 22);
-      ctx.fillStyle = '#7a5b3f';
-      ctx.fillRect(f.x - 1, f.y, 2, f.h);
-      ctx.fillRect(f.x + f.w - 1, f.y, 2, f.h);
-    },
-    wardrobe(f) {
-      ctx.fillStyle = '#7c5734'; roundRect(f.x, f.y, f.w, f.h, 3, true);
-      ctx.fillStyle = '#5a3f25'; ctx.fillRect(f.x + 3, f.y + 3, f.w - 6, f.h - 6);
-      ctx.fillStyle = '#3a2b18'; ctx.fillRect(f.x + f.w / 2 - 0.5, f.y + 3, 1, f.h - 6);
-      ctx.fillStyle = '#caaf85'; ctx.fillRect(f.x + f.w / 2 - 4, f.y + f.h / 2 - 1, 3, 2);
-      ctx.fillStyle = '#caaf85'; ctx.fillRect(f.x + f.w / 2 + 1, f.y + f.h / 2 - 1, 3, 2);
-    },
-    vanity(f) {
-      ctx.fillStyle = '#9c7148'; roundRect(f.x, f.y + f.h * 0.4, f.w, f.h * 0.6, 3, true);
-      ctx.fillStyle = '#7c5734'; ctx.fillRect(f.x + 3, f.y + f.h * 0.4 + 3, f.w - 6, f.h * 0.6 - 6);
-      ctx.fillStyle = '#cee3f0'; roundRect(f.x + f.w / 2 - 8, f.y, 16, f.h * 0.4 + 4, 3, true);
-      ctx.strokeStyle = '#9c7148'; ctx.lineWidth = 1;
-      ctx.strokeRect(f.x + f.w / 2 - 8, f.y, 16, f.h * 0.4 + 4);
-    },
-    loveseat(f) {
-      ctx.fillStyle = '#cd7d96'; roundRect(f.x, f.y, f.w, f.h, 8, true);
-      ctx.fillStyle = '#a4546d'; ctx.fillRect(f.x, f.y, f.w, 12);
-      ctx.fillStyle = '#df9bb1';
-      roundRect(f.x + 4, f.y + 16, f.w / 2 - 6, f.h - 22, 4, true);
-      roundRect(f.x + f.w / 2 + 2, f.y + 16, f.w / 2 - 6, f.h - 22, 4, true);
-    },
-    beanbag(f) {
-      ctx.fillStyle = '#7eaf6a'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + f.h / 2 + 3, f.w / 2, f.h / 2 - 2, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#5b9d4f'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2 - 4, f.y + f.h / 2, f.w / 3, f.h / 3, 0, 0, Math.PI * 2); ctx.fill();
-    },
-    arcade(f) {
-      ctx.fillStyle = '#cf6764'; roundRect(f.x, f.y + 8, f.w, f.h - 8, 4, true);
-      ctx.fillStyle = '#222'; ctx.fillRect(f.x + 4, f.y + 12, f.w - 8, 18);
-      ctx.fillStyle = '#5cdcff'; ctx.fillRect(f.x + 5, f.y + 13, f.w - 10, 16);
-      ctx.fillStyle = '#222'; ctx.fillRect(f.x + 6, f.y + 34, f.w - 12, 6);
-      ctx.fillStyle = '#ff5f8a'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 - 6, f.y + 38, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#5cdcff'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 + 6, f.y + 38, 2, 0, Math.PI * 2); ctx.fill();
-    },
-    piano(f) {
-      ctx.fillStyle = '#1a1a1a'; roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#fff'; ctx.fillRect(f.x + 4, f.y + 8, f.w - 8, f.h - 18);
-      ctx.fillStyle = '#1a1a1a';
-      const keyW = (f.w - 8) / 14;
-      for (let i = 1; i < 14; i++) {
-        if (i % 7 === 3 || i % 7 === 0) continue;
-        ctx.fillRect(f.x + 4 + i * keyW - keyW * 0.3, f.y + 8, keyW * 0.6, (f.h - 18) * 0.6);
-      }
-      ctx.strokeStyle = '#888'; ctx.lineWidth = 0.5;
-      for (let i = 1; i < 14; i++) {
-        ctx.beginPath(); ctx.moveTo(f.x + 4 + i * keyW, f.y + 8); ctx.lineTo(f.x + 4 + i * keyW, f.y + f.h - 10); ctx.stroke();
-      }
-    },
-    'fish-tank'(f) {
-      ctx.fillStyle = '#3a3a3a'; ctx.fillRect(f.x, f.y, f.w, 4);
-      ctx.fillStyle = '#5cdcff'; ctx.fillRect(f.x + 2, f.y + 4, f.w - 4, f.h - 8);
-      ctx.fillStyle = '#222'; ctx.fillRect(f.x, f.y + f.h - 4, f.w, 4);
-      ctx.fillStyle = '#ff8aa8';
-      ctx.beginPath(); ctx.ellipse(f.x + 14, f.y + f.h / 2, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(f.x + 10, f.y + f.h / 2); ctx.lineTo(f.x + 7, f.y + f.h / 2 - 3); ctx.lineTo(f.x + 7, f.y + f.h / 2 + 3); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#ffd166';
-      ctx.beginPath(); ctx.ellipse(f.x + f.w - 14, f.y + f.h / 2 + 3, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.beginPath(); ctx.arc(f.x + f.w - 8, f.y + 8, 1.5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + f.w - 4, f.y + 12, 1, 0, Math.PI * 2); ctx.fill();
-    },
-    duck(f) {
-      ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + f.h - 4, f.w / 2 - 1, 4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(f.x + f.w / 2 + 2, f.y + 4, 4, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#ff8a3a'; ctx.fillRect(f.x + f.w / 2 + 5, f.y + 4, 4, 2);
-      ctx.fillStyle = '#000'; ctx.fillRect(f.x + f.w / 2 + 4, f.y + 3, 1, 1);
-    },
-    towels(f) {
-      ctx.fillStyle = '#ff8aa8'; roundRect(f.x, f.y, f.w, 8, 2, true);
-      ctx.fillStyle = '#7eaf6a'; roundRect(f.x + 2, f.y + 8, f.w - 4, 8, 2, true);
-      ctx.fillStyle = '#5cdcff'; roundRect(f.x + 4, f.y + 16, f.w - 8, 8, 2, true);
-    },
-    shower(f) {
-      ctx.fillStyle = '#cad3df'; roundRect(f.x, f.y, f.w, f.h, 4, true);
-      ctx.fillStyle = '#7fc2c7'; roundRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8, 3, true);
-      ctx.fillStyle = '#888'; ctx.fillRect(f.x + f.w / 2 - 5, f.y + 2, 10, 5);
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      for (let i = 0; i < 5; i++) ctx.fillRect(f.x + f.w / 2 - 4 + i * 2, f.y + 9, 1, 12);
-    },
-    'plant-tall'(f) {
-      ctx.fillStyle = '#7c5734'; roundRect(f.x + 4, f.y + f.h - 14, f.w - 8, 14, 3, true);
-      ctx.fillStyle = '#3e7a3a'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + f.h - 22, f.w / 2 + 2, 18, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#5b9d4f'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2 - 4, f.y + 6, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(f.x + f.w / 2 + 4, f.y + 4, 5, 7, 0, 0, Math.PI * 2); ctx.fill();
-    },
-    cactus(f) {
-      ctx.fillStyle = '#7c5734'; roundRect(f.x + 2, f.y + f.h - 8, f.w - 4, 8, 2, true);
-      ctx.fillStyle = '#5b9d4f'; roundRect(f.x + f.w / 2 - 4, f.y + 2, 8, f.h - 8, 3, true);
-      ctx.fillRect(f.x + f.w / 2 - 8, f.y + 8, 4, 8);
-      ctx.fillRect(f.x + f.w / 2 + 4, f.y + 12, 4, 6);
-      ctx.fillStyle = '#ff8aa8'; ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 4, 2, 0, Math.PI * 2); ctx.fill();
-    },
-    painting(f) {
-      ctx.fillStyle = '#9c7148'; roundRect(f.x - 1, f.y - 1, f.w + 2, f.h + 2, 2, true);
-      ctx.fillStyle = '#5cb0e2'; ctx.fillRect(f.x, f.y, f.w, f.h * 0.6);
-      ctx.fillStyle = '#7eaf6a'; ctx.fillRect(f.x, f.y + f.h * 0.6, f.w, f.h * 0.4);
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(f.x + f.w * 0.7, f.y + f.h * 0.3, 4, 0, Math.PI * 2); ctx.fill();
-    },
-    'photo-frame'(f) {
-      ctx.fillStyle = '#3a2b18'; roundRect(f.x, f.y, f.w, f.h, 2, true);
-      ctx.fillStyle = '#fcf6ec'; ctx.fillRect(f.x + 2, f.y + 2, f.w - 4, f.h - 4);
-      ctx.fillStyle = '#e9c66a'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 - 4, f.y + f.h / 2, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#3b1d2c'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 + 4, f.y + f.h / 2, 3, 0, Math.PI * 2); ctx.fill();
-      drawHeart(f.x + f.w / 2, f.y + f.h - 4, 2, '#ff5f8a');
-    },
-    candle(f) {
-      ctx.fillStyle = '#7c5734'; ctx.fillRect(f.x + 2, f.y + f.h - 6, f.w - 4, 6);
-      ctx.fillStyle = '#fde0a4'; ctx.fillRect(f.x + 4, f.y + 6, f.w - 8, f.h - 12);
-      ctx.fillStyle = '#ffae3a'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + 3, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
-    },
-    'floor-lamp'(f) {
-      ctx.fillStyle = '#2a2a2a'; ctx.fillRect(f.x + f.w / 2 - 1, f.y + 8, 2, f.h - 12);
-      ctx.fillStyle = '#3a3a3a'; ctx.fillRect(f.x + f.w / 2 - 6, f.y + f.h - 6, 12, 4);
-      ctx.fillStyle = '#fde0a4'; ctx.beginPath();
-      ctx.moveTo(f.x + 2, f.y + 8); ctx.lineTo(f.x + f.w - 2, f.y + 8);
-      ctx.lineTo(f.x + f.w - 6, f.y); ctx.lineTo(f.x + 6, f.y); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = 'rgba(255,220,130,0.18)';
-      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 8, 16, 0, Math.PI * 2); ctx.fill();
-    },
-    'disco-ball'(f) {
-      ctx.fillStyle = '#888'; ctx.fillRect(f.x + f.w / 2 - 1, f.y, 2, 4);
-      ctx.fillStyle = '#cdd4dc'; ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + f.h / 2 + 2, f.w / 2 - 2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.fillRect(f.x + f.w / 2 - 7, f.y + f.h / 2 - 1, 5, 2);
-      ctx.fillRect(f.x + f.w / 2 + 1, f.y + f.h / 2 + 4, 4, 2);
-      ctx.fillRect(f.x + f.w / 2 - 3, f.y + f.h / 2 + 7, 6, 2);
-    },
-    'rug-cosmic'(f) {
-      ctx.fillStyle = '#2a1a55'; roundRect(f.x, f.y, f.w, f.h, 10, true);
-      ctx.fillStyle = '#ffd166';
-      const stars = [[0.10, 0.20], [0.30, 0.55], [0.50, 0.30], [0.70, 0.70], [0.90, 0.40], [0.20, 0.80], [0.62, 0.92], [0.42, 0.10], [0.82, 0.18]];
-      stars.forEach(([fx, fy]) => ctx.fillRect(f.x + fx * f.w, f.y + fy * f.h, 2, 2));
-    },
-  });
-
-  // ------------------ kind metadata for catalogue items ------------------
-  const KIND_INTERACT = {
-    bed:           { label: 'woohoo in bed', short: 'sleep', action: 'sleep', bothBoost: 6 },
-    'single-bed':  { label: 'nap',           short: 'nap',   action: 'sleep' },
-    'bunk-bed':    { label: 'pick a bunk',   short: 'sleep', action: 'sleep', bothBoost: 4 },
-    sofa:          { label: 'woohoo on sofa',short: 'sit',   action: 'sit',   bothBoost: 4 },
-    loveseat:      { label: 'snuggle',       short: 'sit',   action: 'sit',   bothBoost: 5 },
-    beanbag:       { label: 'flop',          short: 'flop',  action: 'sit' },
-    tv:            { label: 'watch tv',      short: 'tv',    action: 'tv' },
-    arcade:        { label: 'play arcade',   short: 'game',  action: 'game' },
-    piano:         { label: 'play piano',    short: 'piano', action: 'piano' },
-    'fish-tank':   { label: 'watch fish',    short: 'fish',  action: 'fish' },
-    bookcase:      { label: 'pick a book',   short: 'read',  action: 'read' },
-    coffee:        { label: 'flip a magazine', short: 'read', action: 'read' },
-    fridge:        { label: 'snack from fridge', short: 'snack', action: 'snack' },
-    stove:         { label: 'cook something', short: 'cook',  action: 'cook' },
-    'sink-k':      { label: 'wash up',       short: 'wash',  action: 'wash' },
-    microwave:     { label: 'reheat',        short: 'reheat',action: 'cook' },
-    kettle:        { label: 'make tea',      short: 'tea',   action: 'cook' },
-    dishwasher:    { label: 'load dishes',   short: 'dishes',action: 'wash' },
-    'k-table':     { label: 'sit at table',  short: 'eat',   action: 'eat',  bothBoost: 3 },
-    island:        { label: 'sit at island', short: 'eat',   action: 'eat',  bothBoost: 3 },
-    bath:          { label: 'take a bath',   short: 'bath',  action: 'bath' },
-    shower:        { label: 'take a shower', short: 'shower',action: 'bath' },
-    'sink-b':      { label: 'splash water',  short: 'wash',  action: 'wash' },
-    mirror:        { label: 'look in mirror',short: 'gaze',  action: 'gaze', solidOverride: false },
-    toilet:        { label: 'pee real quick',short: 'go',    action: 'pee' },
-    duck:          { label: 'squeak duck',   short: 'squeak',action: 'squeak' },
-    towels:        { label: 'fold towels',   short: 'fold',  action: 'fold' },
-    plants:        { label: 'water plants',  short: 'water', action: 'water' },
-    'plant-tall':  { label: 'water plant',   short: 'water', action: 'water' },
-    cactus:        { label: 'admire cactus', short: 'admire',action: 'admire' },
-    painting:      { label: 'admire art',    short: 'admire',action: 'admire' },
-    'photo-frame': { label: 'look at photo', short: 'look',  action: 'admire' },
-    candle:        { label: 'light candle',  short: 'light', action: 'lamp' },
-    'floor-lamp':  { label: 'flick lamp',    short: 'lamp',  action: 'lamp' },
-    'disco-ball':  { label: 'disco time',    short: 'disco', action: 'disco' },
-    dresser:       { label: 'change outfit', short: 'dress', action: 'dress' },
-    vanity:        { label: 'pretty up',     short: 'glam',  action: 'dress' },
-    wardrobe:      { label: 'change outfit', short: 'dress', action: 'dress' },
-    chair:         { label: 'sit',           short: 'sit',   action: 'sit' },
-    'side-table':  { label: 'set down',      short: 'set',   action: 'set' },
-    lamp:          { label: 'flick lamp',    short: 'lamp',  action: 'lamp', solidOverride: false },
-  };
-
-  const DECOR_KINDS = new Set(['rug', 'rug-bal', 'rug-liv', 'rug-bath', 'rug-cosmic']);
-
-  // expand bubble messages for new actions
-  const oldOnUseStart = onUseStart;
-  onUseStart = function (c, f) {
-    oldOnUseStart(c, f);
-    if (f.action === 'game')   bubble(charIdx(c), 'pew pew', 1.6);
-    if (f.action === 'piano')  bubble(charIdx(c), '*tinkle tinkle*', 1.8);
-    if (f.action === 'fish')   bubble(charIdx(c), 'glub glub', 1.8);
-    if (f.action === 'squeak') bubble(charIdx(c), 'squeak!', 1.4);
-    if (f.action === 'fold')   bubble(charIdx(c), 'tidy', 1.4);
-    if (f.action === 'admire') bubble(charIdx(c), 'pretty', 1.6);
-    if (f.action === 'disco')  { bubble(charIdx(c), 'boogie', 1.6); spawnHearts(c.x, c.y - 18, 4, '#ffd166'); }
-    if (f.action === 'set')    bubble(charIdx(c), '*sets down*', 1.4);
-  };
-
-  // ------------------ catalogue ------------------
-  const CATALOGUE = [
-    { kind: 'bed',          name: 'Double Bed',    cat: 'Bedroom',  cost: 0,  w: 96,  h: 128 },
-    { kind: 'single-bed',   name: 'Single Bed',    cat: 'Bedroom',  cost: 6,  w: 64,  h: 96 },
-    { kind: 'bunk-bed',     name: 'Bunk Bed',      cat: 'Bedroom',  cost: 14, w: 80,  h: 128 },
-    { kind: 'wardrobe',     name: 'Wardrobe',      cat: 'Bedroom',  cost: 5,  w: 64,  h: 28 },
-    { kind: 'dresser',      name: 'Dresser',       cat: 'Bedroom',  cost: 4,  w: 64,  h: 32 },
-    { kind: 'vanity',       name: 'Vanity',        cat: 'Bedroom',  cost: 5,  w: 56,  h: 36 },
-    { kind: 'lamp',         name: 'Bedside Lamp',  cat: 'Bedroom',  cost: 2,  w: 24,  h: 24 },
-
-    { kind: 'sofa',         name: 'Sofa',          cat: 'Living',   cost: 0,  w: 192, h: 64 },
-    { kind: 'loveseat',     name: 'Loveseat',      cat: 'Living',   cost: 5,  w: 96,  h: 64 },
-    { kind: 'beanbag',      name: 'Bean Bag',      cat: 'Living',   cost: 3,  w: 48,  h: 48 },
-    { kind: 'tv',           name: 'TV',            cat: 'Living',   cost: 0,  w: 96,  h: 36 },
-    { kind: 'arcade',       name: 'Arcade',        cat: 'Living',   cost: 12, w: 48,  h: 64 },
-    { kind: 'piano',        name: 'Piano',         cat: 'Living',   cost: 12, w: 96,  h: 40 },
-    { kind: 'fish-tank',    name: 'Fish Tank',     cat: 'Living',   cost: 9,  w: 64,  h: 32 },
-    { kind: 'bookcase',     name: 'Bookcase',      cat: 'Living',   cost: 4,  w: 64,  h: 24 },
-    { kind: 'coffee',       name: 'Coffee Table',  cat: 'Living',   cost: 3,  w: 96,  h: 36 },
-
-    { kind: 'fridge',       name: 'Fridge',        cat: 'Kitchen',  cost: 0,  w: 56,  h: 72 },
-    { kind: 'stove',        name: 'Stove',         cat: 'Kitchen',  cost: 0,  w: 56,  h: 56 },
-    { kind: 'sink-k',       name: 'Sink',          cat: 'Kitchen',  cost: 3,  w: 56,  h: 40 },
-    { kind: 'microwave',    name: 'Microwave',     cat: 'Kitchen',  cost: 3,  w: 40,  h: 24 },
-    { kind: 'kettle',       name: 'Kettle',        cat: 'Kitchen',  cost: 2,  w: 24,  h: 28 },
-    { kind: 'dishwasher',   name: 'Dishwasher',    cat: 'Kitchen',  cost: 5,  w: 48,  h: 56 },
-    { kind: 'k-table',      name: 'Kitchen Table', cat: 'Kitchen',  cost: 4,  w: 96,  h: 48 },
-    { kind: 'island',       name: 'Kitchen Island',cat: 'Kitchen',  cost: 7,  w: 96,  h: 48 },
-
-    { kind: 'bath',         name: 'Bath',          cat: 'Bathroom', cost: 0,  w: 112, h: 64 },
-    { kind: 'shower',       name: 'Shower',        cat: 'Bathroom', cost: 6,  w: 56,  h: 56 },
-    { kind: 'sink-b',       name: 'Sink',          cat: 'Bathroom', cost: 3,  w: 56,  h: 32 },
-    { kind: 'mirror',       name: 'Mirror',        cat: 'Bathroom', cost: 2,  w: 56,  h: 16 },
-    { kind: 'toilet',       name: 'Toilet',        cat: 'Bathroom', cost: 3,  w: 32,  h: 40 },
-    { kind: 'duck',         name: 'Rubber Duck',   cat: 'Bathroom', cost: 1,  w: 16,  h: 12 },
-    { kind: 'towels',       name: 'Towels',        cat: 'Bathroom', cost: 2,  w: 28,  h: 28 },
-
-    { kind: 'plants',       name: 'Plants',        cat: 'Decor',    cost: 2,  w: 56,  h: 36 },
-    { kind: 'plant-tall',   name: 'Tall Plant',    cat: 'Decor',    cost: 3,  w: 32,  h: 48 },
-    { kind: 'cactus',       name: 'Cactus',        cat: 'Decor',    cost: 2,  w: 24,  h: 32 },
-    { kind: 'painting',     name: 'Painting',      cat: 'Decor',    cost: 4,  w: 40,  h: 28 },
-    { kind: 'photo-frame',  name: 'Photo of us',   cat: 'Decor',    cost: 1,  w: 24,  h: 20 },
-    { kind: 'candle',       name: 'Candle',        cat: 'Decor',    cost: 1,  w: 16,  h: 22 },
-    { kind: 'floor-lamp',   name: 'Floor Lamp',    cat: 'Decor',    cost: 3,  w: 24,  h: 36 },
-    { kind: 'disco-ball',   name: 'Disco Ball',    cat: 'Decor',    cost: 8,  w: 24,  h: 28 },
-    { kind: 'rug',          name: 'Pink Rug',      cat: 'Decor',    cost: 2,  w: 96,  h: 48 },
-    { kind: 'rug-cosmic',   name: 'Cosmic Rug',    cat: 'Decor',    cost: 5,  w: 128, h: 64 },
-    { kind: 'chair',        name: 'Chair',         cat: 'Decor',    cost: 2,  w: 36,  h: 44 },
-    { kind: 'side-table',   name: 'Side Table',    cat: 'Decor',    cost: 2,  w: 28,  h: 28 },
-  ];
-
-  const KIND_ICON = {
-    bed: '🛏️', 'single-bed': '🛌', 'bunk-bed': '🛏️',
-    wardrobe: '🚪', dresser: '🗄️', vanity: '💄', lamp: '💡',
-    sofa: '🛋️', loveseat: '💕', beanbag: '🟢',
-    tv: '📺', arcade: '🕹️', piano: '🎹',
-    'fish-tank': '🐟', bookcase: '📚', coffee: '☕',
-    fridge: '🧊', stove: '🔥', 'sink-k': '🚰',
-    microwave: '🍱', kettle: '🫖', dishwasher: '🧼',
-    'k-table': '🍽️', island: '🥗',
-    bath: '🛁', shower: '🚿', 'sink-b': '🚰',
-    mirror: '🪞', toilet: '🚽', duck: '🦆', towels: '🧻',
-    plants: '🪴', 'plant-tall': '🌿', cactus: '🌵',
-    painting: '🖼️', 'photo-frame': '📷', candle: '🕯️',
-    'floor-lamp': '💡', 'disco-ball': '🪩',
-    rug: '🟥', 'rug-cosmic': '🌌', chair: '🪑', 'side-table': '🍵',
-  };
-
-  // ------------------ build mode ------------------
-  let nextFurnId = furniture.length + 1;
-  furniture.forEach(f => { if (!f.id) f.id = 'f-' + (nextFurnId++); });
-
-  const buildMode = { active: false, placing: null, selected: null, moving: null };
-  let activeCat = 'Bedroom';
-  let lastPointer = null;
-
-  const buildPanel = document.getElementById('build-panel');
-  const buildBanner = document.getElementById('build-banner');
-  const buildBannerText = document.getElementById('build-banner-text');
-  const buildList = document.getElementById('build-list');
-  const buildTabs = document.getElementById('build-tabs');
-  const buildHearts = document.getElementById('build-hearts');
-
-  function bannerText(t) { buildBannerText.textContent = t; }
-
-  function enterBuildMode() {
-    buildMode.active = true;
-    buildMode.placing = null;
-    buildMode.selected = null;
-    buildMode.moving = null;
-    buildPanel.classList.add('show');
-    buildBanner.classList.add('show');
-    bannerText('build mode · tap items to place');
-    populateCatalogueTabs();
-    populateCatalogueList();
-  }
-  function exitBuildMode() {
-    buildMode.active = false;
-    buildMode.placing = null;
-    buildMode.selected = null;
-    buildMode.moving = null;
-    buildPanel.classList.remove('show');
-    buildBanner.classList.remove('show');
-  }
-
-  function populateCatalogueTabs() {
-    const cats = [...new Set(CATALOGUE.map(c => c.cat))];
-    buildTabs.innerHTML = '';
-    cats.forEach(cat => {
-      const b = document.createElement('button');
-      b.textContent = cat;
-      if (cat === activeCat) b.classList.add('active');
-      b.addEventListener('click', () => { activeCat = cat; populateCatalogueTabs(); populateCatalogueList(); });
-      buildTabs.appendChild(b);
-    });
-  }
-  function populateCatalogueList() {
-    buildList.innerHTML = '';
-    buildHearts.textContent = totalHearts;
-    CATALOGUE.filter(c => c.cat === activeCat).forEach(item => {
-      const el = document.createElement('div');
-      el.className = 'build-item';
-      if (totalHearts < item.cost) el.classList.add('locked');
-      const icon = document.createElement('div');
-      icon.style.fontSize = '26px'; icon.style.lineHeight = '1';
-      icon.textContent = KIND_ICON[item.kind] || '❓';
-      el.appendChild(icon);
-      const nm = document.createElement('div');
-      nm.className = 'name'; nm.textContent = item.name; el.appendChild(nm);
-      const cost = document.createElement('div');
-      cost.className = 'cost'; cost.textContent = item.cost === 0 ? 'free' : '♥ ' + item.cost;
-      el.appendChild(cost);
-      el.addEventListener('click', () => {
-        if (totalHearts < item.cost) { bannerText('not enough hearts (' + item.cost + ')'); return; }
-        buildMode.placing = item;
-        buildMode.selected = null;
-        buildMode.moving = null;
-        bannerText('tap floor to place ' + item.name);
-        if (window.innerWidth < 600) buildPanel.classList.remove('show');
-      });
-      buildList.appendChild(el);
-    });
-  }
-
-  function canPlaceAt(item, x, y, ignoreFurniture) {
-    if (x < 0 || y < 0 || x + item.w > W || y + item.h > H) return false;
-    const tx0 = Math.floor(x / TILE), ty0 = Math.floor(y / TILE);
-    const tx1 = Math.floor((x + item.w - 1) / TILE), ty1 = Math.floor((y + item.h - 1) / TILE);
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-      if (map[ty][tx] !== 0) return false;
-    }
-    const isDecor = DECOR_KINDS.has(item.kind);
-    for (const f of furniture) {
-      if (f === ignoreFurniture) continue;
-      if (isDecor || f.decor) continue;
-      if (x < f.x + f.w && x + item.w > f.x && y < f.y + f.h && y + item.h > f.y) return false;
-    }
-    return true;
-  }
-
-  function placeNewItem(item, x, y) {
-    if (item.cost > 0) addHearts(-item.cost);
-    const def = KIND_INTERACT[item.kind] || {};
-    const isDecor = DECOR_KINDS.has(item.kind);
-    furniture.push({
-      id: 'f-' + (nextFurnId++),
-      kind: item.kind, x, y, w: item.w, h: item.h,
-      label: def.label, short: def.short, action: def.action, bothBoost: def.bothBoost,
-      decor: isDecor,
-      solid: !isDecor && def.solidOverride !== false,
-    });
-  }
-
-  function handleBuildClick(x, y) {
-    if (buildMode.placing) {
-      const item = buildMode.placing;
-      const fx = Math.round((x - item.w / 2) / 4) * 4;
-      const fy = Math.round((y - item.h / 2) / 4) * 4;
-      if (canPlaceAt(item, fx, fy)) {
-        placeNewItem(item, fx, fy);
-        buildMode.placing = null;
-        saveFurniture();
-        populateCatalogueList();
-        bannerText('placed!');
-        if (window.innerWidth < 600) buildPanel.classList.add('show');
-      } else bannerText('cant place there');
-      return;
-    }
-    if (buildMode.moving) {
-      const f = buildMode.moving;
-      const fx = Math.round((x - f.w / 2) / 4) * 4;
-      const fy = Math.round((y - f.h / 2) / 4) * 4;
-      const oldX = f.x, oldY = f.y;
-      f.x = fx; f.y = fy;
-      if (!canPlaceAt(f, fx, fy, f)) {
-        f.x = oldX; f.y = oldY;
-        bannerText('cant place there');
-        return;
-      }
-      buildMode.moving = null;
-      saveFurniture();
-      bannerText('moved');
-      return;
-    }
-    for (let i = furniture.length - 1; i >= 0; i--) {
-      const f = furniture[i];
-      if (x >= f.x && x < f.x + f.w && y >= f.y && y < f.y + f.h) {
-        if (buildMode.selected === f) {
-          buildMode.moving = f;
-          buildMode.selected = null;
-          bannerText('tap floor to drop ' + (f.label || f.kind));
-        } else {
-          buildMode.selected = f;
-          bannerText('selected ' + (f.label || f.kind) + ' · tap again to move, X to delete');
-        }
-        return;
-      }
-    }
-    buildMode.selected = null;
-    bannerText('build mode · tap items to place');
-  }
-
-  function deleteSelected() {
-    if (!buildMode.selected) return;
-    const idx = furniture.indexOf(buildMode.selected);
-    if (idx >= 0) furniture.splice(idx, 1);
-    buildMode.selected = null;
-    saveFurniture();
-    bannerText('deleted');
-  }
-
-  function saveFurniture() {
-    try {
-      const slim = furniture.map(f => ({ kind: f.kind, x: f.x, y: f.y, w: f.w, h: f.h }));
-      localStorage.setItem('apt_furniture', JSON.stringify(slim));
-    } catch {}
-  }
-  function loadFurniture() {
-    try {
-      const data = localStorage.getItem('apt_furniture');
-      if (!data) return;
-      const slim = JSON.parse(data);
-      if (!Array.isArray(slim)) return;
-      furniture.length = 0;
-      slim.forEach(f => {
-        const def = KIND_INTERACT[f.kind] || {};
-        const isDecor = DECOR_KINDS.has(f.kind);
-        furniture.push({
-          id: 'f-' + (nextFurnId++),
-          kind: f.kind, x: f.x, y: f.y, w: f.w, h: f.h,
-          label: def.label, short: def.short, action: def.action, bothBoost: def.bothBoost,
-          decor: isDecor,
-          solid: !isDecor && def.solidOverride !== false,
-        });
-      });
-    } catch {}
-  }
-  loadFurniture();
-
-  // canvas pointer handling for build mode
-  canvas.style.cursor = 'default';
-  function canvasPointer(e) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: (e.clientX - rect.left) * canvas.width / rect.width,
-      y: (e.clientY - rect.top) * canvas.height / rect.height,
-    };
-  }
-  canvas.addEventListener('pointerdown', (e) => {
-    if (!buildMode.active) return;
-    e.preventDefault();
-    const p = canvasPointer(e);
-    handleBuildClick(p.x, p.y);
-  });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!buildMode.active) return;
-    lastPointer = canvasPointer(e);
-  });
-
-  // build panel close + delete buttons
-  document.getElementById('build-close').addEventListener('click', () => {
-    if (window.innerWidth < 600) buildPanel.classList.remove('show');
-    else exitBuildMode();
-  });
-  document.getElementById('build-banner-exit').addEventListener('click', exitBuildMode);
-
-  // ------------------ touch / button bindings ------------------
-  function bindTouch() {
-    // D-pad: hold-to-walk
-    document.querySelectorAll('#dpad button[data-tk]').forEach(btn => {
-      const k = btn.getAttribute('data-tk');
-      const press = (e) => { e.preventDefault(); e.stopPropagation(); keys[k] = true; btn.classList.add('pressed'); };
-      const release = (e) => { if (e) { e.preventDefault(); e.stopPropagation(); } keys[k] = false; btn.classList.remove('pressed'); };
-      btn.addEventListener('touchstart', press, { passive: false });
-      btn.addEventListener('touchend',   release, { passive: false });
-      btn.addEventListener('touchcancel',release, { passive: false });
-      btn.addEventListener('mousedown',  press);
-      btn.addEventListener('mouseup',    release);
-      btn.addEventListener('mouseleave', release);
-      btn.addEventListener('contextmenu', (e) => e.preventDefault());
-    });
-    // Action buttons: one-shot fire on tap (debounced so touchstart+click don't double)
-    document.querySelectorAll('#action-grid button[data-tap]').forEach(btn => {
-      const k = btn.getAttribute('data-tap');
-      let lastFire = 0;
-      const fire = (e) => {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        const now = Date.now();
-        if (now - lastFire < 250) return;
-        lastFire = now;
-        if (titleScreenVisible) { hideTitle(); return; }
-        keyEdge[k] = true;
-        if (k === ' ' || k === 'tab') {
-          keys[k] = true;
-          setTimeout(() => { keys[k] = false; }, 60);
-        }
-        btn.classList.add('pressed');
-        setTimeout(() => btn.classList.remove('pressed'), 120);
-      };
-      btn.addEventListener('touchstart', fire, { passive: false });
-      btn.addEventListener('click', fire);
-    });
-    // Canvas tap fallback for build mode (some iOS versions don't sync pointer events)
-    canvas.addEventListener('touchstart', (e) => {
-      if (!buildMode.active) return;
-      e.preventDefault();
-      const t = e.touches[0]; if (!t) return;
-      const rect = canvas.getBoundingClientRect();
-      handleBuildClick(
-        (t.clientX - rect.left) * canvas.width / rect.width,
-        (t.clientY - rect.top)  * canvas.height / rect.height
-      );
-    }, { passive: false });
-  }
-  bindTouch();
-
-  // ------------------ go ------------------
+  setHearts(totalHearts);
   requestAnimationFrame(loop);
 })();
 </script>
