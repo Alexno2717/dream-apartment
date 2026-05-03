@@ -420,6 +420,7 @@
     { id: 'bal-chair',kind: 'chair',   x: 528, y: 96,  w: 36, h: 44,  label: 'lounge outside', short: 'lounge', action: 'lounge' },
     { id: 'bal-table',kind: 'side-table', x: 576, y: 104, w: 28, h: 28, label: 'sip drink',    short: 'sip',    action: 'sip' },
     { id: 'rug-bal',  kind: 'rug-bal', x: 504, y: 88,  w: 168, h: 64, decor: true },
+    { id: 'shrine',   kind: 'shrine',  x: 408, y: 96,  w: 40, h: 48,  label: 'remember Monica', short: 'monica', action: 'remember' },
 
     // LIVING ROOM
     { id: 'sofa',     kind: 'sofa',    x: 304, y: 224, w: 192, h: 64,  label: 'woohoo on sofa', short: 'sit',    action: 'sit',  bothBoost: 4 },
@@ -490,6 +491,16 @@
   const chars = [alex, rose];
   const active = () => chars[activeIdx];
   const npc = () => chars[1 - activeIdx];
+
+  // ------------------ meeko the cat ------------------
+  // tabby grey w/ darker stripes, black face/legs, white chest
+  const meeko = {
+    name: 'Meeko',
+    x: 520, y: 380, facing: 'down',
+    walking: false, walkPhase: 0,
+    target: null, cooldown: 1, sitTimer: 0,
+    purrTimer: 0,
+  };
 
   // ------------------ shared state ------------------
   let totalHearts = parseInt(localStorage.getItem('apt_hearts') || '0', 10);
@@ -666,6 +677,18 @@
       const d = Math.hypot(ex, ey);
       if (d < bestDist) { bestDist = d; best = f; }
     }
+    // also consider meeko as a pettable target
+    if (typeof meeko !== 'undefined') {
+      const mw = 16, mh = 12;
+      const mx = meeko.x - mw / 2, my = meeko.y - mh;
+      const ex = Math.max(0, Math.abs(c.x - (mx + mw / 2)) - mw / 2);
+      const ey = Math.max(0, Math.abs(c.y - (my + mh / 2)) - mh / 2);
+      const d = Math.hypot(ex, ey);
+      if (d < bestDist) {
+        bestDist = d;
+        best = { id: 'meeko', kind: 'meeko-pet', x: mx, y: my, w: mw, h: mh, label: 'pet Meeko', short: 'pet', action: 'pet-meeko', _meeko: true };
+      }
+    }
     return best;
   }
 
@@ -704,6 +727,22 @@
     if (f.action === 'pee')    bubble(charIdx(c), 'brb', 1.4);
     if (f.action === 'dress')  bubble(charIdx(c), 'outfit change', 1.8);
     if (f.action === 'lamp')   bubble(charIdx(c), 'click', 1.2);
+    if (f.action === 'pet-meeko') {
+      const lines = ['hi meeko ♥', 'who\'s a good kitty', 'soft floof', 'meeko ♪', '*scritches*'];
+      bubble(charIdx(c), lines[(Math.random() * lines.length) | 0], 1.8);
+      meeko.purrTimer = 3.5;
+      meeko.sitTimer = Math.max(meeko.sitTimer, 2.5);
+      spawnHearts(meeko.x, meeko.y - 18, 3, '#ff8aa8');
+      addHearts(1);
+      // immediately stop "using" so you can keep moving
+      setTimeout(() => { if (c.using === f) stopUsing(c); }, 100);
+    }
+    if (f.action === 'remember') {
+      const lines = ['miss you, monica', 'forever loved ♥', '*lights candle*', 'tiny tabby angel'];
+      bubble(charIdx(c), lines[(Math.random() * lines.length) | 0], 2.4);
+      spawnHearts(f.x + f.w / 2, f.y - 4, 4, '#caa6ff');
+      addHearts(2);
+    }
 
     // special triggers
     if (c === alex && f.action === 'sleep') {
@@ -823,6 +862,120 @@
     }
   }
 
+  // ------------------ meeko AI ------------------
+  function meekoUpdate(dt) {
+    meeko.purrTimer = Math.max(0, meeko.purrTimer - dt);
+    if (meeko.sitTimer > 0) {
+      meeko.sitTimer -= dt;
+      meeko.walking = false;
+      // occasional purr/meow bubble
+      if (meeko.sitTimer <= 0 && Math.random() < 0.4) {
+        // brief meow
+      }
+      return;
+    }
+    if (!meeko.target) {
+      meeko.cooldown -= dt;
+      if (meeko.cooldown <= 0) {
+        for (let i = 0; i < 12; i++) {
+          const x = 32 + Math.random() * (W - 64);
+          const y = 32 + Math.random() * (H - 64);
+          if (!collidesAt(x, y, meeko)) { meeko.target = { x, y }; break; }
+        }
+        meeko.cooldown = 0;
+      }
+      meeko.walking = false;
+      return;
+    }
+    const dx = meeko.target.x - meeko.x, dy = meeko.target.y - meeko.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 5) { meeko.target = null; meeko.sitTimer = 1.2 + Math.random() * 3.5; meeko.walking = false; return; }
+    const speed = 55;
+    const nx = meeko.x + (dx / dist) * speed * dt;
+    const ny = meeko.y + (dy / dist) * speed * dt;
+    let moved = false;
+    if (!collidesAt(nx, meeko.y, meeko)) { meeko.x = nx; moved = true; }
+    if (!collidesAt(meeko.x, ny, meeko)) { meeko.y = ny; moved = true; }
+    if (!moved) { meeko.target = null; meeko.cooldown = 0.4; }
+    meeko.walking = true; meeko.walkPhase += dt * 11;
+    if (Math.abs(dx) > Math.abs(dy)) meeko.facing = dx > 0 ? 'right' : 'left';
+    else meeko.facing = dy > 0 ? 'down' : 'up';
+  }
+
+  function drawMeeko() {
+    const x = meeko.x | 0, y = meeko.y | 0;
+    const bob = meeko.walking ? Math.sin(meeko.walkPhase) * 0.6 : 0;
+    const purr = meeko.purrTimer > 0;
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.ellipse(x, y + 1, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
+    const isLeft = meeko.facing === 'left';
+    const isRight = meeko.facing === 'right';
+    const isDown = meeko.facing === 'down';
+    const isUp = meeko.facing === 'up';
+    const hx = x + (isLeft ? -7 : isRight ? 7 : 0);
+    const hy = y - 7 + bob;
+    // tabby grey body w/ darker stripes
+    ctx.fillStyle = '#8a8580';
+    rr(x - 8, y - 8 + bob, 16, 9, 4);
+    // stripes
+    ctx.fillStyle = '#5a554f';
+    for (let i = 0; i < 3; i++) ctx.fillRect(x - 6 + i * 5, y - 7 + bob, 1, 7);
+    // white chest patch (front)
+    ctx.fillStyle = '#fff';
+    if (isDown) rr(x - 3, y - 3 + bob, 6, 4, 2);
+    else if (isLeft) rr(x - 7, y - 4 + bob, 5, 5, 2);
+    else if (isRight) rr(x + 2, y - 4 + bob, 5, 5, 2);
+    // black legs
+    ctx.fillStyle = '#1a1620';
+    ctx.fillRect(x - 7, y - 1 + bob, 2, 2);
+    ctx.fillRect(x + 5, y - 1 + bob, 2, 2);
+    // tail (curls up when sitting)
+    ctx.fillStyle = '#5a554f';
+    if (meeko.walking) {
+      ctx.fillRect(x + (isLeft ? 7 : -11), y - 9 + bob, 4, 2);
+    } else {
+      ctx.beginPath();
+      ctx.arc(x + (isLeft ? 8 : -8), y - 8 + bob, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // black face
+    if (!isUp) {
+      ctx.fillStyle = '#2a242a';
+      ctx.beginPath(); ctx.arc(hx, hy, 5, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = '#3a3540';
+      ctx.beginPath(); ctx.arc(hx, hy, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    // ears (black)
+    ctx.fillStyle = '#1a1620';
+    ctx.beginPath();
+    ctx.moveTo(hx - 4, hy - 3); ctx.lineTo(hx - 2, hy - 7); ctx.lineTo(hx, hy - 3); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(hx + 1, hy - 3); ctx.lineTo(hx + 3, hy - 7); ctx.lineTo(hx + 5, hy - 3); ctx.fill();
+    // pink inner ear
+    ctx.fillStyle = '#ff8aa8';
+    ctx.fillRect(hx - 2, hy - 5, 1, 2); ctx.fillRect(hx + 2, hy - 5, 1, 2);
+    // eyes (yellow)
+    if (!isUp) {
+      ctx.fillStyle = '#e0c46a';
+      if (isDown) { ctx.fillRect(hx - 3, hy - 1, 1, 2); ctx.fillRect(hx + 2, hy - 1, 1, 2); }
+      else if (isLeft) { ctx.fillRect(hx - 4, hy - 1, 1, 2); ctx.fillRect(hx - 1, hy - 1, 1, 2); }
+      else if (isRight) { ctx.fillRect(hx + 1, hy - 1, 1, 2); ctx.fillRect(hx + 4, hy - 1, 1, 2); }
+      // tiny pink nose
+      ctx.fillStyle = '#ff8aa8';
+      ctx.fillRect(hx, hy + 1, 1, 1);
+    }
+    // purr "♪" when petted
+    if (purr) {
+      ctx.fillStyle = '#ff8aa8';
+      ctx.font = 'bold 10px ui-rounded, system-ui, sans-serif';
+      const t = performance.now();
+      ctx.fillText('♪', x + 6, y - 14 - (Math.sin(t / 250) * 2));
+      ctx.fillText('♪', x + 11, y - 18 - (Math.sin(t / 200) * 2));
+    }
+  }
+
   // ------------------ player input update ------------------
   function playerUpdate(c, dt) {
     if (c.using) {
@@ -921,6 +1074,8 @@
       if (!buildMode.active) playerUpdate(active(), dt);
       // Update NPC
       if (!buildMode.active) npcUpdate(npc(), dt);
+      // Meeko keeps doing her thing
+      if (!buildMode.active) meekoUpdate(dt);
 
       // ttl bubbles
       for (let i = bubbles.length - 1; i >= 0; i--) {
@@ -992,6 +1147,7 @@
     const sortable = [];
     furniture.filter(f => !f.decor).forEach(f => sortable.push({ y: f.y + f.h, draw: () => drawFurniture(f) }));
     chars.forEach(c => sortable.push({ y: c.y, draw: () => drawChar(c) }));
+    sortable.push({ y: meeko.y, draw: () => drawMeeko() });
     sortable.sort((a, b) => a.y - b.y);
     sortable.forEach(s => s.draw());
 
@@ -1081,6 +1237,43 @@
   }
 
   const furnitureDrawers = {
+    shrine(f) {
+      // base / altar
+      ctx.fillStyle = '#a98260'; rr(f.x, f.y + f.h - 14, f.w, 14, 3, true);
+      ctx.fillStyle = '#7c5734'; ctx.fillRect(f.x + 2, f.y + f.h - 13, f.w - 4, 2);
+      // photo frame
+      ctx.fillStyle = '#dcb15c'; rr(f.x + 6, f.y + 4, f.w - 12, f.h - 22, 3, true);
+      ctx.fillStyle = '#fff7e0'; ctx.fillRect(f.x + 9, f.y + 7, f.w - 18, f.h - 28);
+      // tiny monica silhouette (smaller meeko-ish)
+      const cx = f.x + f.w / 2, cy = f.y + f.h - 24;
+      ctx.fillStyle = '#7d7873'; rr(cx - 5, cy - 2, 10, 6, 2, true);
+      ctx.fillStyle = '#5a554f'; ctx.fillRect(cx - 4, cy - 1, 1, 5); ctx.fillRect(cx + 1, cy - 1, 1, 5);
+      ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2, cy + 1, 4, 2);
+      ctx.fillStyle = '#2a242a';
+      ctx.beginPath(); ctx.arc(cx + 4, cy - 3, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1a1620';
+      ctx.beginPath();
+      ctx.moveTo(cx + 2, cy - 5); ctx.lineTo(cx + 3.5, cy - 7); ctx.lineTo(cx + 5, cy - 5); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx + 4, cy - 5); ctx.lineTo(cx + 5.5, cy - 7); ctx.lineTo(cx + 7, cy - 5); ctx.fill();
+      // candle on the side
+      ctx.fillStyle = '#fff7e0'; ctx.fillRect(f.x + 2, f.y + f.h - 22, 4, 8);
+      // flame
+      const t = performance.now() / 200;
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.ellipse(f.x + 4, f.y + f.h - 24 + Math.sin(t) * 0.5, 2, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 200, 100, 0.25)';
+      ctx.beginPath(); ctx.arc(f.x + 4, f.y + f.h - 24, 8, 0, Math.PI * 2); ctx.fill();
+      // tiny heart on frame
+      drawHeart(cx, f.y + f.h - 14, 3, '#ff5f8a');
+      // little flowers in front
+      ctx.fillStyle = '#ff8aa8';
+      ctx.beginPath(); ctx.arc(f.x + f.w - 6, f.y + f.h - 4, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#caa6ff';
+      ctx.beginPath(); ctx.arc(f.x + f.w - 10, f.y + f.h - 3, 1.5, 0, Math.PI * 2); ctx.fill();
+    },
     bed(f) {
       // frame
       ctx.fillStyle = '#7a5b3f';
