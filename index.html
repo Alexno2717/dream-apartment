@@ -285,7 +285,11 @@
           <tr><td class="k">Space / E</td><td>interact with whatever you're standing next to</td></tr>
           <tr><td class="k">Tab</td><td>switch between Alex &amp; Rose</td></tr>
           <tr><td class="k">M</td><td>sing your song (Alex's lullaby / Rose's villain anthem)</td></tr>
+          <tr><td class="k">Q</td><td>say one of your classic lines</td></tr>
+          <tr><td class="k">K</td><td>kiss the other one (must be close)</td></tr>
           <tr><td class="k">H</td><td>heart-bomb the other one (cheesy)</td></tr>
+          <tr><td class="k">B</td><td>build mode — buy &amp; place furniture, move things around</td></tr>
+          <tr><td class="k">X</td><td>delete the selected piece (in build mode)</td></tr>
           <tr><td class="k">Esc</td><td>close this</td></tr>
         </table>
         <p style="margin-top:14px">Hearts go up when you interact with stuff and especially when you're together — both on the sofa, both in bed, etc. Walk Alex over to bed and press space → lullaby. Walk Rose to the mirror → villain song.</p>
@@ -338,6 +342,7 @@
       <button class="pink" data-tap="k">kiss</button>
       <button data-tap="q">quote</button>
       <button data-tap="b">build</button>
+      <button data-tap="x">del</button>
     </div>
   </div>
 
@@ -879,6 +884,14 @@
         const c = active();
         singSong(c.song, charIdx(c));
       }
+      // B → toggle build mode (mobile: reopen panel if hidden)
+      if (keyEdge['b']) {
+        if (!buildMode.active) enterBuildMode();
+        else if (window.innerWidth < 600 && !buildPanel.classList.contains('show')) buildPanel.classList.add('show');
+        else exitBuildMode();
+      }
+      // X → delete selected furniture in build mode
+      if (keyEdge['x'] && buildMode.active) deleteSelected();
       // Q → say a random classic line
       if (keyEdge['q']) sayRandom(active());
       // K → kiss the other one if close
@@ -904,10 +917,10 @@
       // Esc closes help
       if (keyEdge['escape']) helpOverlay.classList.remove('show');
 
-      // Update active player
-      playerUpdate(active(), dt);
+      // Update active player (frozen in build mode)
+      if (!buildMode.active) playerUpdate(active(), dt);
       // Update NPC
-      npcUpdate(npc(), dt);
+      if (!buildMode.active) npcUpdate(npc(), dt);
 
       // ttl bubbles
       for (let i = bubbles.length - 1; i >= 0; i--) {
@@ -995,6 +1008,41 @@
 
     // active character indicator
     drawActiveRing(active());
+
+    // build mode overlays
+    if (buildMode.active) drawBuildOverlay();
+  }
+
+  function drawBuildOverlay() {
+    if (buildMode.selected) {
+      const f = buildMode.selected;
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(f.x - 1, f.y - 1, f.w + 2, f.h + 2);
+      ctx.setLineDash([]);
+    }
+    if (buildMode.moving) {
+      const f = buildMode.moving;
+      ctx.fillStyle = 'rgba(255, 209, 102, 0.2)';
+      ctx.fillRect(f.x, f.y, f.w, f.h);
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(f.x, f.y, f.w, f.h);
+      ctx.setLineDash([]);
+    }
+    if (buildMode.placing && lastPointer) {
+      const item = buildMode.placing;
+      const fx = Math.round((lastPointer.x - item.w / 2) / 4) * 4;
+      const fy = Math.round((lastPointer.y - item.h / 2) / 4) * 4;
+      const ok = canPlaceAt(item, fx, fy);
+      ctx.fillStyle = ok ? 'rgba(108,218,198,0.35)' : 'rgba(214,59,108,0.35)';
+      ctx.fillRect(fx, fy, item.w, item.h);
+      ctx.strokeStyle = ok ? '#6cdac6' : '#d63b6c';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(fx, fy, item.w, item.h);
+    }
   }
 
   function drawWalls() {
@@ -1495,6 +1543,564 @@
   }
   drawTitlePreview('t-alex', alex);
   drawTitlePreview('t-rose', rose);
+
+  // ------------------ extra furniture drawers ------------------
+  Object.assign(furnitureDrawers, {
+    microwave(f) {
+      ctx.fillStyle = '#3a3a3a'; roundRect(f.x, f.y, f.w, f.h, 3, true);
+      ctx.fillStyle = '#1a1a1a'; ctx.fillRect(f.x + 4, f.y + 4, f.w - 16, f.h - 8);
+      ctx.fillStyle = '#5cdcff'; ctx.fillRect(f.x + 5, f.y + 5, f.w - 18, f.h - 10);
+      ctx.fillStyle = '#888'; ctx.fillRect(f.x + f.w - 10, f.y + 6, 6, 4);
+      ctx.fillRect(f.x + f.w - 10, f.y + 14, 6, 2);
+    },
+    kettle(f) {
+      ctx.fillStyle = '#d4d6da'; roundRect(f.x, f.y + 4, f.w, f.h - 4, 5, true);
+      ctx.fillStyle = '#888'; ctx.fillRect(f.x + 4, f.y, f.w - 8, 5);
+      ctx.fillStyle = '#3a3a3a'; ctx.fillRect(f.x + f.w / 2 - 1, f.y + 8, 2, 4);
+      ctx.fillStyle = '#888'; ctx.fillRect(f.x - 3, f.y + 10, 4, 8);
+    },
+    dishwasher(f) {
+      ctx.fillStyle = '#a3aebf'; roundRect(f.x, f.y, f.w, f.h, 3, true);
+      ctx.fillStyle = '#cad3df'; ctx.fillRect(f.x + 3, f.y + 3, f.w - 6, f.h - 6);
+      ctx.fillStyle = '#888'; ctx.fillRect(f.x + 5, f.y + 5, f.w - 10, 4);
+      ctx.fillStyle = '#222'; ctx.fillRect(f.x + f.w / 2 - 6, f.y + f.h - 8, 12, 2);
+    },
+    island(f) {
+      ctx.fillStyle = '#a98260'; roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#fcf6ec'; ctx.fillRect(f.x + 2, f.y + 2, f.w - 4, f.h - 4);
+      ctx.fillStyle = '#e9c66a'; ctx.beginPath(); ctx.arc(f.x + 16, f.y + f.h / 2, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#cf6764'; ctx.fillRect(f.x + f.w - 24, f.y + f.h / 2 - 4, 16, 8);
+    },
+    'single-bed'(f) {
+      ctx.fillStyle = '#7a5b3f'; ctx.fillRect(f.x - 3, f.y, f.w + 6, f.h + 3);
+      ctx.fillStyle = '#fcf6ec'; ctx.fillRect(f.x, f.y + 3, f.w, f.h - 6);
+      ctx.fillStyle = '#f7c8d8'; roundRect(f.x + 4, f.y + 6, f.w - 8, 14, 3, true);
+      ctx.fillStyle = '#cd7d96'; ctx.fillRect(f.x, f.y + f.h - 38, f.w, 32);
+    },
+    'bunk-bed'(f) {
+      ctx.fillStyle = '#7a5b3f'; ctx.fillRect(f.x - 3, f.y, f.w + 6, f.h + 3);
+      ctx.fillStyle = '#fcf6ec';
+      ctx.fillRect(f.x, f.y + 3, f.w, f.h / 2 - 6);
+      ctx.fillRect(f.x, f.y + f.h / 2 + 3, f.w, f.h / 2 - 6);
+      ctx.fillStyle = '#cd7d96';
+      ctx.fillRect(f.x, f.y + f.h / 2 - 28, f.w, 22);
+      ctx.fillRect(f.x, f.y + f.h - 28, f.w, 22);
+      ctx.fillStyle = '#7a5b3f';
+      ctx.fillRect(f.x - 1, f.y, 2, f.h);
+      ctx.fillRect(f.x + f.w - 1, f.y, 2, f.h);
+    },
+    wardrobe(f) {
+      ctx.fillStyle = '#7c5734'; roundRect(f.x, f.y, f.w, f.h, 3, true);
+      ctx.fillStyle = '#5a3f25'; ctx.fillRect(f.x + 3, f.y + 3, f.w - 6, f.h - 6);
+      ctx.fillStyle = '#3a2b18'; ctx.fillRect(f.x + f.w / 2 - 0.5, f.y + 3, 1, f.h - 6);
+      ctx.fillStyle = '#caaf85'; ctx.fillRect(f.x + f.w / 2 - 4, f.y + f.h / 2 - 1, 3, 2);
+      ctx.fillStyle = '#caaf85'; ctx.fillRect(f.x + f.w / 2 + 1, f.y + f.h / 2 - 1, 3, 2);
+    },
+    vanity(f) {
+      ctx.fillStyle = '#9c7148'; roundRect(f.x, f.y + f.h * 0.4, f.w, f.h * 0.6, 3, true);
+      ctx.fillStyle = '#7c5734'; ctx.fillRect(f.x + 3, f.y + f.h * 0.4 + 3, f.w - 6, f.h * 0.6 - 6);
+      ctx.fillStyle = '#cee3f0'; roundRect(f.x + f.w / 2 - 8, f.y, 16, f.h * 0.4 + 4, 3, true);
+      ctx.strokeStyle = '#9c7148'; ctx.lineWidth = 1;
+      ctx.strokeRect(f.x + f.w / 2 - 8, f.y, 16, f.h * 0.4 + 4);
+    },
+    loveseat(f) {
+      ctx.fillStyle = '#cd7d96'; roundRect(f.x, f.y, f.w, f.h, 8, true);
+      ctx.fillStyle = '#a4546d'; ctx.fillRect(f.x, f.y, f.w, 12);
+      ctx.fillStyle = '#df9bb1';
+      roundRect(f.x + 4, f.y + 16, f.w / 2 - 6, f.h - 22, 4, true);
+      roundRect(f.x + f.w / 2 + 2, f.y + 16, f.w / 2 - 6, f.h - 22, 4, true);
+    },
+    beanbag(f) {
+      ctx.fillStyle = '#7eaf6a'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + f.h / 2 + 3, f.w / 2, f.h / 2 - 2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#5b9d4f'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2 - 4, f.y + f.h / 2, f.w / 3, f.h / 3, 0, 0, Math.PI * 2); ctx.fill();
+    },
+    arcade(f) {
+      ctx.fillStyle = '#cf6764'; roundRect(f.x, f.y + 8, f.w, f.h - 8, 4, true);
+      ctx.fillStyle = '#222'; ctx.fillRect(f.x + 4, f.y + 12, f.w - 8, 18);
+      ctx.fillStyle = '#5cdcff'; ctx.fillRect(f.x + 5, f.y + 13, f.w - 10, 16);
+      ctx.fillStyle = '#222'; ctx.fillRect(f.x + 6, f.y + 34, f.w - 12, 6);
+      ctx.fillStyle = '#ff5f8a'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 - 6, f.y + 38, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#5cdcff'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 + 6, f.y + 38, 2, 0, Math.PI * 2); ctx.fill();
+    },
+    piano(f) {
+      ctx.fillStyle = '#1a1a1a'; roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#fff'; ctx.fillRect(f.x + 4, f.y + 8, f.w - 8, f.h - 18);
+      ctx.fillStyle = '#1a1a1a';
+      const keyW = (f.w - 8) / 14;
+      for (let i = 1; i < 14; i++) {
+        if (i % 7 === 3 || i % 7 === 0) continue;
+        ctx.fillRect(f.x + 4 + i * keyW - keyW * 0.3, f.y + 8, keyW * 0.6, (f.h - 18) * 0.6);
+      }
+      ctx.strokeStyle = '#888'; ctx.lineWidth = 0.5;
+      for (let i = 1; i < 14; i++) {
+        ctx.beginPath(); ctx.moveTo(f.x + 4 + i * keyW, f.y + 8); ctx.lineTo(f.x + 4 + i * keyW, f.y + f.h - 10); ctx.stroke();
+      }
+    },
+    'fish-tank'(f) {
+      ctx.fillStyle = '#3a3a3a'; ctx.fillRect(f.x, f.y, f.w, 4);
+      ctx.fillStyle = '#5cdcff'; ctx.fillRect(f.x + 2, f.y + 4, f.w - 4, f.h - 8);
+      ctx.fillStyle = '#222'; ctx.fillRect(f.x, f.y + f.h - 4, f.w, 4);
+      ctx.fillStyle = '#ff8aa8';
+      ctx.beginPath(); ctx.ellipse(f.x + 14, f.y + f.h / 2, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(f.x + 10, f.y + f.h / 2); ctx.lineTo(f.x + 7, f.y + f.h / 2 - 3); ctx.lineTo(f.x + 7, f.y + f.h / 2 + 3); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath(); ctx.ellipse(f.x + f.w - 14, f.y + f.h / 2 + 3, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath(); ctx.arc(f.x + f.w - 8, f.y + 8, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + f.w - 4, f.y + 12, 1, 0, Math.PI * 2); ctx.fill();
+    },
+    duck(f) {
+      ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + f.h - 4, f.w / 2 - 1, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + f.w / 2 + 2, f.y + 4, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ff8a3a'; ctx.fillRect(f.x + f.w / 2 + 5, f.y + 4, 4, 2);
+      ctx.fillStyle = '#000'; ctx.fillRect(f.x + f.w / 2 + 4, f.y + 3, 1, 1);
+    },
+    towels(f) {
+      ctx.fillStyle = '#ff8aa8'; roundRect(f.x, f.y, f.w, 8, 2, true);
+      ctx.fillStyle = '#7eaf6a'; roundRect(f.x + 2, f.y + 8, f.w - 4, 8, 2, true);
+      ctx.fillStyle = '#5cdcff'; roundRect(f.x + 4, f.y + 16, f.w - 8, 8, 2, true);
+    },
+    shower(f) {
+      ctx.fillStyle = '#cad3df'; roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#7fc2c7'; roundRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8, 3, true);
+      ctx.fillStyle = '#888'; ctx.fillRect(f.x + f.w / 2 - 5, f.y + 2, 10, 5);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      for (let i = 0; i < 5; i++) ctx.fillRect(f.x + f.w / 2 - 4 + i * 2, f.y + 9, 1, 12);
+    },
+    'plant-tall'(f) {
+      ctx.fillStyle = '#7c5734'; roundRect(f.x + 4, f.y + f.h - 14, f.w - 8, 14, 3, true);
+      ctx.fillStyle = '#3e7a3a'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + f.h - 22, f.w / 2 + 2, 18, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#5b9d4f'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2 - 4, f.y + 6, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(f.x + f.w / 2 + 4, f.y + 4, 5, 7, 0, 0, Math.PI * 2); ctx.fill();
+    },
+    cactus(f) {
+      ctx.fillStyle = '#7c5734'; roundRect(f.x + 2, f.y + f.h - 8, f.w - 4, 8, 2, true);
+      ctx.fillStyle = '#5b9d4f'; roundRect(f.x + f.w / 2 - 4, f.y + 2, 8, f.h - 8, 3, true);
+      ctx.fillRect(f.x + f.w / 2 - 8, f.y + 8, 4, 8);
+      ctx.fillRect(f.x + f.w / 2 + 4, f.y + 12, 4, 6);
+      ctx.fillStyle = '#ff8aa8'; ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 4, 2, 0, Math.PI * 2); ctx.fill();
+    },
+    painting(f) {
+      ctx.fillStyle = '#9c7148'; roundRect(f.x - 1, f.y - 1, f.w + 2, f.h + 2, 2, true);
+      ctx.fillStyle = '#5cb0e2'; ctx.fillRect(f.x, f.y, f.w, f.h * 0.6);
+      ctx.fillStyle = '#7eaf6a'; ctx.fillRect(f.x, f.y + f.h * 0.6, f.w, f.h * 0.4);
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(f.x + f.w * 0.7, f.y + f.h * 0.3, 4, 0, Math.PI * 2); ctx.fill();
+    },
+    'photo-frame'(f) {
+      ctx.fillStyle = '#3a2b18'; roundRect(f.x, f.y, f.w, f.h, 2, true);
+      ctx.fillStyle = '#fcf6ec'; ctx.fillRect(f.x + 2, f.y + 2, f.w - 4, f.h - 4);
+      ctx.fillStyle = '#e9c66a'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 - 4, f.y + f.h / 2, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3b1d2c'; ctx.beginPath(); ctx.arc(f.x + f.w / 2 + 4, f.y + f.h / 2, 3, 0, Math.PI * 2); ctx.fill();
+      drawHeart(f.x + f.w / 2, f.y + f.h - 4, 2, '#ff5f8a');
+    },
+    candle(f) {
+      ctx.fillStyle = '#7c5734'; ctx.fillRect(f.x + 2, f.y + f.h - 6, f.w - 4, 6);
+      ctx.fillStyle = '#fde0a4'; ctx.fillRect(f.x + 4, f.y + 6, f.w - 8, f.h - 12);
+      ctx.fillStyle = '#ffae3a'; ctx.beginPath(); ctx.ellipse(f.x + f.w / 2, f.y + 3, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
+    },
+    'floor-lamp'(f) {
+      ctx.fillStyle = '#2a2a2a'; ctx.fillRect(f.x + f.w / 2 - 1, f.y + 8, 2, f.h - 12);
+      ctx.fillStyle = '#3a3a3a'; ctx.fillRect(f.x + f.w / 2 - 6, f.y + f.h - 6, 12, 4);
+      ctx.fillStyle = '#fde0a4'; ctx.beginPath();
+      ctx.moveTo(f.x + 2, f.y + 8); ctx.lineTo(f.x + f.w - 2, f.y + 8);
+      ctx.lineTo(f.x + f.w - 6, f.y); ctx.lineTo(f.x + 6, f.y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,220,130,0.18)';
+      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 8, 16, 0, Math.PI * 2); ctx.fill();
+    },
+    'disco-ball'(f) {
+      ctx.fillStyle = '#888'; ctx.fillRect(f.x + f.w / 2 - 1, f.y, 2, 4);
+      ctx.fillStyle = '#cdd4dc'; ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + f.h / 2 + 2, f.w / 2 - 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillRect(f.x + f.w / 2 - 7, f.y + f.h / 2 - 1, 5, 2);
+      ctx.fillRect(f.x + f.w / 2 + 1, f.y + f.h / 2 + 4, 4, 2);
+      ctx.fillRect(f.x + f.w / 2 - 3, f.y + f.h / 2 + 7, 6, 2);
+    },
+    'rug-cosmic'(f) {
+      ctx.fillStyle = '#2a1a55'; roundRect(f.x, f.y, f.w, f.h, 10, true);
+      ctx.fillStyle = '#ffd166';
+      const stars = [[0.10, 0.20], [0.30, 0.55], [0.50, 0.30], [0.70, 0.70], [0.90, 0.40], [0.20, 0.80], [0.62, 0.92], [0.42, 0.10], [0.82, 0.18]];
+      stars.forEach(([fx, fy]) => ctx.fillRect(f.x + fx * f.w, f.y + fy * f.h, 2, 2));
+    },
+  });
+
+  // ------------------ kind metadata for catalogue items ------------------
+  const KIND_INTERACT = {
+    bed:           { label: 'woohoo in bed', short: 'sleep', action: 'sleep', bothBoost: 6 },
+    'single-bed':  { label: 'nap',           short: 'nap',   action: 'sleep' },
+    'bunk-bed':    { label: 'pick a bunk',   short: 'sleep', action: 'sleep', bothBoost: 4 },
+    sofa:          { label: 'woohoo on sofa',short: 'sit',   action: 'sit',   bothBoost: 4 },
+    loveseat:      { label: 'snuggle',       short: 'sit',   action: 'sit',   bothBoost: 5 },
+    beanbag:       { label: 'flop',          short: 'flop',  action: 'sit' },
+    tv:            { label: 'watch tv',      short: 'tv',    action: 'tv' },
+    arcade:        { label: 'play arcade',   short: 'game',  action: 'game' },
+    piano:         { label: 'play piano',    short: 'piano', action: 'piano' },
+    'fish-tank':   { label: 'watch fish',    short: 'fish',  action: 'fish' },
+    bookcase:      { label: 'pick a book',   short: 'read',  action: 'read' },
+    coffee:        { label: 'flip a magazine', short: 'read', action: 'read' },
+    fridge:        { label: 'snack from fridge', short: 'snack', action: 'snack' },
+    stove:         { label: 'cook something', short: 'cook',  action: 'cook' },
+    'sink-k':      { label: 'wash up',       short: 'wash',  action: 'wash' },
+    microwave:     { label: 'reheat',        short: 'reheat',action: 'cook' },
+    kettle:        { label: 'make tea',      short: 'tea',   action: 'cook' },
+    dishwasher:    { label: 'load dishes',   short: 'dishes',action: 'wash' },
+    'k-table':     { label: 'sit at table',  short: 'eat',   action: 'eat',  bothBoost: 3 },
+    island:        { label: 'sit at island', short: 'eat',   action: 'eat',  bothBoost: 3 },
+    bath:          { label: 'take a bath',   short: 'bath',  action: 'bath' },
+    shower:        { label: 'take a shower', short: 'shower',action: 'bath' },
+    'sink-b':      { label: 'splash water',  short: 'wash',  action: 'wash' },
+    mirror:        { label: 'look in mirror',short: 'gaze',  action: 'gaze', solidOverride: false },
+    toilet:        { label: 'pee real quick',short: 'go',    action: 'pee' },
+    duck:          { label: 'squeak duck',   short: 'squeak',action: 'squeak' },
+    towels:        { label: 'fold towels',   short: 'fold',  action: 'fold' },
+    plants:        { label: 'water plants',  short: 'water', action: 'water' },
+    'plant-tall':  { label: 'water plant',   short: 'water', action: 'water' },
+    cactus:        { label: 'admire cactus', short: 'admire',action: 'admire' },
+    painting:      { label: 'admire art',    short: 'admire',action: 'admire' },
+    'photo-frame': { label: 'look at photo', short: 'look',  action: 'admire' },
+    candle:        { label: 'light candle',  short: 'light', action: 'lamp' },
+    'floor-lamp':  { label: 'flick lamp',    short: 'lamp',  action: 'lamp' },
+    'disco-ball':  { label: 'disco time',    short: 'disco', action: 'disco' },
+    dresser:       { label: 'change outfit', short: 'dress', action: 'dress' },
+    vanity:        { label: 'pretty up',     short: 'glam',  action: 'dress' },
+    wardrobe:      { label: 'change outfit', short: 'dress', action: 'dress' },
+    chair:         { label: 'sit',           short: 'sit',   action: 'sit' },
+    'side-table':  { label: 'set down',      short: 'set',   action: 'set' },
+    lamp:          { label: 'flick lamp',    short: 'lamp',  action: 'lamp', solidOverride: false },
+  };
+
+  const DECOR_KINDS = new Set(['rug', 'rug-bal', 'rug-liv', 'rug-bath', 'rug-cosmic']);
+
+  // expand bubble messages for new actions
+  const oldOnUseStart = onUseStart;
+  onUseStart = function (c, f) {
+    oldOnUseStart(c, f);
+    if (f.action === 'game')   bubble(charIdx(c), 'pew pew', 1.6);
+    if (f.action === 'piano')  bubble(charIdx(c), '*tinkle tinkle*', 1.8);
+    if (f.action === 'fish')   bubble(charIdx(c), 'glub glub', 1.8);
+    if (f.action === 'squeak') bubble(charIdx(c), 'squeak!', 1.4);
+    if (f.action === 'fold')   bubble(charIdx(c), 'tidy', 1.4);
+    if (f.action === 'admire') bubble(charIdx(c), 'pretty', 1.6);
+    if (f.action === 'disco')  { bubble(charIdx(c), 'boogie', 1.6); spawnHearts(c.x, c.y - 18, 4, '#ffd166'); }
+    if (f.action === 'set')    bubble(charIdx(c), '*sets down*', 1.4);
+  };
+
+  // ------------------ catalogue ------------------
+  const CATALOGUE = [
+    { kind: 'bed',          name: 'Double Bed',    cat: 'Bedroom',  cost: 0,  w: 96,  h: 128 },
+    { kind: 'single-bed',   name: 'Single Bed',    cat: 'Bedroom',  cost: 6,  w: 64,  h: 96 },
+    { kind: 'bunk-bed',     name: 'Bunk Bed',      cat: 'Bedroom',  cost: 14, w: 80,  h: 128 },
+    { kind: 'wardrobe',     name: 'Wardrobe',      cat: 'Bedroom',  cost: 5,  w: 64,  h: 28 },
+    { kind: 'dresser',      name: 'Dresser',       cat: 'Bedroom',  cost: 4,  w: 64,  h: 32 },
+    { kind: 'vanity',       name: 'Vanity',        cat: 'Bedroom',  cost: 5,  w: 56,  h: 36 },
+    { kind: 'lamp',         name: 'Bedside Lamp',  cat: 'Bedroom',  cost: 2,  w: 24,  h: 24 },
+
+    { kind: 'sofa',         name: 'Sofa',          cat: 'Living',   cost: 0,  w: 192, h: 64 },
+    { kind: 'loveseat',     name: 'Loveseat',      cat: 'Living',   cost: 5,  w: 96,  h: 64 },
+    { kind: 'beanbag',      name: 'Bean Bag',      cat: 'Living',   cost: 3,  w: 48,  h: 48 },
+    { kind: 'tv',           name: 'TV',            cat: 'Living',   cost: 0,  w: 96,  h: 36 },
+    { kind: 'arcade',       name: 'Arcade',        cat: 'Living',   cost: 12, w: 48,  h: 64 },
+    { kind: 'piano',        name: 'Piano',         cat: 'Living',   cost: 12, w: 96,  h: 40 },
+    { kind: 'fish-tank',    name: 'Fish Tank',     cat: 'Living',   cost: 9,  w: 64,  h: 32 },
+    { kind: 'bookcase',     name: 'Bookcase',      cat: 'Living',   cost: 4,  w: 64,  h: 24 },
+    { kind: 'coffee',       name: 'Coffee Table',  cat: 'Living',   cost: 3,  w: 96,  h: 36 },
+
+    { kind: 'fridge',       name: 'Fridge',        cat: 'Kitchen',  cost: 0,  w: 56,  h: 72 },
+    { kind: 'stove',        name: 'Stove',         cat: 'Kitchen',  cost: 0,  w: 56,  h: 56 },
+    { kind: 'sink-k',       name: 'Sink',          cat: 'Kitchen',  cost: 3,  w: 56,  h: 40 },
+    { kind: 'microwave',    name: 'Microwave',     cat: 'Kitchen',  cost: 3,  w: 40,  h: 24 },
+    { kind: 'kettle',       name: 'Kettle',        cat: 'Kitchen',  cost: 2,  w: 24,  h: 28 },
+    { kind: 'dishwasher',   name: 'Dishwasher',    cat: 'Kitchen',  cost: 5,  w: 48,  h: 56 },
+    { kind: 'k-table',      name: 'Kitchen Table', cat: 'Kitchen',  cost: 4,  w: 96,  h: 48 },
+    { kind: 'island',       name: 'Kitchen Island',cat: 'Kitchen',  cost: 7,  w: 96,  h: 48 },
+
+    { kind: 'bath',         name: 'Bath',          cat: 'Bathroom', cost: 0,  w: 112, h: 64 },
+    { kind: 'shower',       name: 'Shower',        cat: 'Bathroom', cost: 6,  w: 56,  h: 56 },
+    { kind: 'sink-b',       name: 'Sink',          cat: 'Bathroom', cost: 3,  w: 56,  h: 32 },
+    { kind: 'mirror',       name: 'Mirror',        cat: 'Bathroom', cost: 2,  w: 56,  h: 16 },
+    { kind: 'toilet',       name: 'Toilet',        cat: 'Bathroom', cost: 3,  w: 32,  h: 40 },
+    { kind: 'duck',         name: 'Rubber Duck',   cat: 'Bathroom', cost: 1,  w: 16,  h: 12 },
+    { kind: 'towels',       name: 'Towels',        cat: 'Bathroom', cost: 2,  w: 28,  h: 28 },
+
+    { kind: 'plants',       name: 'Plants',        cat: 'Decor',    cost: 2,  w: 56,  h: 36 },
+    { kind: 'plant-tall',   name: 'Tall Plant',    cat: 'Decor',    cost: 3,  w: 32,  h: 48 },
+    { kind: 'cactus',       name: 'Cactus',        cat: 'Decor',    cost: 2,  w: 24,  h: 32 },
+    { kind: 'painting',     name: 'Painting',      cat: 'Decor',    cost: 4,  w: 40,  h: 28 },
+    { kind: 'photo-frame',  name: 'Photo of us',   cat: 'Decor',    cost: 1,  w: 24,  h: 20 },
+    { kind: 'candle',       name: 'Candle',        cat: 'Decor',    cost: 1,  w: 16,  h: 22 },
+    { kind: 'floor-lamp',   name: 'Floor Lamp',    cat: 'Decor',    cost: 3,  w: 24,  h: 36 },
+    { kind: 'disco-ball',   name: 'Disco Ball',    cat: 'Decor',    cost: 8,  w: 24,  h: 28 },
+    { kind: 'rug',          name: 'Pink Rug',      cat: 'Decor',    cost: 2,  w: 96,  h: 48 },
+    { kind: 'rug-cosmic',   name: 'Cosmic Rug',    cat: 'Decor',    cost: 5,  w: 128, h: 64 },
+    { kind: 'chair',        name: 'Chair',         cat: 'Decor',    cost: 2,  w: 36,  h: 44 },
+    { kind: 'side-table',   name: 'Side Table',    cat: 'Decor',    cost: 2,  w: 28,  h: 28 },
+  ];
+
+  const KIND_ICON = {
+    bed: '🛏️', 'single-bed': '🛌', 'bunk-bed': '🛏️',
+    wardrobe: '🚪', dresser: '🗄️', vanity: '💄', lamp: '💡',
+    sofa: '🛋️', loveseat: '💕', beanbag: '🟢',
+    tv: '📺', arcade: '🕹️', piano: '🎹',
+    'fish-tank': '🐟', bookcase: '📚', coffee: '☕',
+    fridge: '🧊', stove: '🔥', 'sink-k': '🚰',
+    microwave: '🍱', kettle: '🫖', dishwasher: '🧼',
+    'k-table': '🍽️', island: '🥗',
+    bath: '🛁', shower: '🚿', 'sink-b': '🚰',
+    mirror: '🪞', toilet: '🚽', duck: '🦆', towels: '🧻',
+    plants: '🪴', 'plant-tall': '🌿', cactus: '🌵',
+    painting: '🖼️', 'photo-frame': '📷', candle: '🕯️',
+    'floor-lamp': '💡', 'disco-ball': '🪩',
+    rug: '🟥', 'rug-cosmic': '🌌', chair: '🪑', 'side-table': '🍵',
+  };
+
+  // ------------------ build mode ------------------
+  let nextFurnId = furniture.length + 1;
+  furniture.forEach(f => { if (!f.id) f.id = 'f-' + (nextFurnId++); });
+
+  const buildMode = { active: false, placing: null, selected: null, moving: null };
+  let activeCat = 'Bedroom';
+  let lastPointer = null;
+
+  const buildPanel = document.getElementById('build-panel');
+  const buildBanner = document.getElementById('build-banner');
+  const buildBannerText = document.getElementById('build-banner-text');
+  const buildList = document.getElementById('build-list');
+  const buildTabs = document.getElementById('build-tabs');
+  const buildHearts = document.getElementById('build-hearts');
+
+  function bannerText(t) { buildBannerText.textContent = t; }
+
+  function enterBuildMode() {
+    buildMode.active = true;
+    buildMode.placing = null;
+    buildMode.selected = null;
+    buildMode.moving = null;
+    buildPanel.classList.add('show');
+    buildBanner.classList.add('show');
+    bannerText('build mode · tap items to place');
+    populateCatalogueTabs();
+    populateCatalogueList();
+  }
+  function exitBuildMode() {
+    buildMode.active = false;
+    buildMode.placing = null;
+    buildMode.selected = null;
+    buildMode.moving = null;
+    buildPanel.classList.remove('show');
+    buildBanner.classList.remove('show');
+  }
+
+  function populateCatalogueTabs() {
+    const cats = [...new Set(CATALOGUE.map(c => c.cat))];
+    buildTabs.innerHTML = '';
+    cats.forEach(cat => {
+      const b = document.createElement('button');
+      b.textContent = cat;
+      if (cat === activeCat) b.classList.add('active');
+      b.addEventListener('click', () => { activeCat = cat; populateCatalogueTabs(); populateCatalogueList(); });
+      buildTabs.appendChild(b);
+    });
+  }
+  function populateCatalogueList() {
+    buildList.innerHTML = '';
+    buildHearts.textContent = totalHearts;
+    CATALOGUE.filter(c => c.cat === activeCat).forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'build-item';
+      if (totalHearts < item.cost) el.classList.add('locked');
+      const icon = document.createElement('div');
+      icon.style.fontSize = '26px'; icon.style.lineHeight = '1';
+      icon.textContent = KIND_ICON[item.kind] || '❓';
+      el.appendChild(icon);
+      const nm = document.createElement('div');
+      nm.className = 'name'; nm.textContent = item.name; el.appendChild(nm);
+      const cost = document.createElement('div');
+      cost.className = 'cost'; cost.textContent = item.cost === 0 ? 'free' : '♥ ' + item.cost;
+      el.appendChild(cost);
+      el.addEventListener('click', () => {
+        if (totalHearts < item.cost) { bannerText('not enough hearts (' + item.cost + ')'); return; }
+        buildMode.placing = item;
+        buildMode.selected = null;
+        buildMode.moving = null;
+        bannerText('tap floor to place ' + item.name);
+        if (window.innerWidth < 600) buildPanel.classList.remove('show');
+      });
+      buildList.appendChild(el);
+    });
+  }
+
+  function canPlaceAt(item, x, y, ignoreFurniture) {
+    if (x < 0 || y < 0 || x + item.w > W || y + item.h > H) return false;
+    const tx0 = Math.floor(x / TILE), ty0 = Math.floor(y / TILE);
+    const tx1 = Math.floor((x + item.w - 1) / TILE), ty1 = Math.floor((y + item.h - 1) / TILE);
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+      if (map[ty][tx] !== 0) return false;
+    }
+    const isDecor = DECOR_KINDS.has(item.kind);
+    for (const f of furniture) {
+      if (f === ignoreFurniture) continue;
+      if (isDecor || f.decor) continue;
+      if (x < f.x + f.w && x + item.w > f.x && y < f.y + f.h && y + item.h > f.y) return false;
+    }
+    return true;
+  }
+
+  function placeNewItem(item, x, y) {
+    if (item.cost > 0) addHearts(-item.cost);
+    const def = KIND_INTERACT[item.kind] || {};
+    const isDecor = DECOR_KINDS.has(item.kind);
+    furniture.push({
+      id: 'f-' + (nextFurnId++),
+      kind: item.kind, x, y, w: item.w, h: item.h,
+      label: def.label, short: def.short, action: def.action, bothBoost: def.bothBoost,
+      decor: isDecor,
+      solid: !isDecor && def.solidOverride !== false,
+    });
+  }
+
+  function handleBuildClick(x, y) {
+    if (buildMode.placing) {
+      const item = buildMode.placing;
+      const fx = Math.round((x - item.w / 2) / 4) * 4;
+      const fy = Math.round((y - item.h / 2) / 4) * 4;
+      if (canPlaceAt(item, fx, fy)) {
+        placeNewItem(item, fx, fy);
+        buildMode.placing = null;
+        saveFurniture();
+        populateCatalogueList();
+        bannerText('placed!');
+        if (window.innerWidth < 600) buildPanel.classList.add('show');
+      } else bannerText('cant place there');
+      return;
+    }
+    if (buildMode.moving) {
+      const f = buildMode.moving;
+      const fx = Math.round((x - f.w / 2) / 4) * 4;
+      const fy = Math.round((y - f.h / 2) / 4) * 4;
+      const oldX = f.x, oldY = f.y;
+      f.x = fx; f.y = fy;
+      if (!canPlaceAt(f, fx, fy, f)) {
+        f.x = oldX; f.y = oldY;
+        bannerText('cant place there');
+        return;
+      }
+      buildMode.moving = null;
+      saveFurniture();
+      bannerText('moved');
+      return;
+    }
+    for (let i = furniture.length - 1; i >= 0; i--) {
+      const f = furniture[i];
+      if (x >= f.x && x < f.x + f.w && y >= f.y && y < f.y + f.h) {
+        if (buildMode.selected === f) {
+          buildMode.moving = f;
+          buildMode.selected = null;
+          bannerText('tap floor to drop ' + (f.label || f.kind));
+        } else {
+          buildMode.selected = f;
+          bannerText('selected ' + (f.label || f.kind) + ' · tap again to move, X to delete');
+        }
+        return;
+      }
+    }
+    buildMode.selected = null;
+    bannerText('build mode · tap items to place');
+  }
+
+  function deleteSelected() {
+    if (!buildMode.selected) return;
+    const idx = furniture.indexOf(buildMode.selected);
+    if (idx >= 0) furniture.splice(idx, 1);
+    buildMode.selected = null;
+    saveFurniture();
+    bannerText('deleted');
+  }
+
+  function saveFurniture() {
+    try {
+      const slim = furniture.map(f => ({ kind: f.kind, x: f.x, y: f.y, w: f.w, h: f.h }));
+      localStorage.setItem('apt_furniture', JSON.stringify(slim));
+    } catch {}
+  }
+  function loadFurniture() {
+    try {
+      const data = localStorage.getItem('apt_furniture');
+      if (!data) return;
+      const slim = JSON.parse(data);
+      if (!Array.isArray(slim)) return;
+      furniture.length = 0;
+      slim.forEach(f => {
+        const def = KIND_INTERACT[f.kind] || {};
+        const isDecor = DECOR_KINDS.has(f.kind);
+        furniture.push({
+          id: 'f-' + (nextFurnId++),
+          kind: f.kind, x: f.x, y: f.y, w: f.w, h: f.h,
+          label: def.label, short: def.short, action: def.action, bothBoost: def.bothBoost,
+          decor: isDecor,
+          solid: !isDecor && def.solidOverride !== false,
+        });
+      });
+    } catch {}
+  }
+  loadFurniture();
+
+  // canvas pointer handling for build mode
+  canvas.style.cursor = 'default';
+  function canvasPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * canvas.width / rect.width,
+      y: (e.clientY - rect.top) * canvas.height / rect.height,
+    };
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!buildMode.active) return;
+    e.preventDefault();
+    const p = canvasPointer(e);
+    handleBuildClick(p.x, p.y);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!buildMode.active) return;
+    lastPointer = canvasPointer(e);
+  });
+
+  // build panel close + delete buttons
+  document.getElementById('build-close').addEventListener('click', () => {
+    if (window.innerWidth < 600) buildPanel.classList.remove('show');
+    else exitBuildMode();
+  });
+  document.getElementById('build-banner-exit').addEventListener('click', exitBuildMode);
+
+  // ------------------ touch / button bindings ------------------
+  function bindTouch() {
+    document.querySelectorAll('#dpad button[data-tk]').forEach(btn => {
+      const k = btn.getAttribute('data-tk');
+      const press = (e) => { e.preventDefault(); keys[k] = true; btn.classList.add('pressed'); };
+      const release = (e) => { e.preventDefault(); keys[k] = false; btn.classList.remove('pressed'); };
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('touchcancel', release, { passive: false });
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
+    });
+    document.querySelectorAll('#action-grid button[data-tap]').forEach(btn => {
+      const k = btn.getAttribute('data-tap');
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (titleScreenVisible) { hideTitle(); return; }
+        keyEdge[k] = true;
+        if (k === ' ' || k === 'tab') {
+          // Also set keys[] so playerUpdate sees movement-cancel
+          keys[k] = true;
+          setTimeout(() => { keys[k] = false; }, 50);
+        }
+      });
+    });
+    // toggle touch controls when finger detected
+    let touched = false;
+    window.addEventListener('touchstart', () => { if (!touched) { touched = true; document.body.classList.add('show-touch'); } }, { once: true });
+  }
+  bindTouch();
 
   // ------------------ go ------------------
   requestAnimationFrame(loop);
