@@ -723,15 +723,27 @@
 
   function onUseStart(c, f) {
     const i = charIdx(c);
-    const tip = {
-      sleep:'mmm bed.', sit:'sofa life.', eat:'snack incoming', snack:'fridge raid',
-      cook:'cheffing', water:'plant babies', lounge:'sun + chair = yes', sip:'tiny drink',
-      tv:'tv noises', read:'reading', wash:'splash splash', gaze: c === rose ? 'hello, me.' : 'look at u',
-      bath:'bath time', pee:'brb', dress:'outfit change', lamp:'click',
+    const tipPool = {
+      sleep:  ['bed era', 'no thoughts head empty', 'cooked', 'sleep is winning', 'gnight bestie'],
+      sit:    ['couch rotation', 'horizontal era', 'just vibing fr', 'sofa moment'],
+      eat:    ['locking in', 'fed', 'food slay', 'nom'],
+      snack:  ['fridge check', 'who put cheese in here', 'snack run', 'mid snack tbh'],
+      cook:   ['plating', 'chef girlypop', 'no recipe just delulu', 'burnt it but its giving'],
+      water:  ['hydrating my green guys', 'plant girl moment', 'mother nature', 'staying alive bestie'],
+      lounge: ['lounging', 'main character chair', 'sun ate me', 'serving relaxation'],
+      sip:    ['sip sip', 'beverage check', 'staying hydrated periodt'],
+      tv:     ['doom watch', 'one more ep i swear', 'show is mid', 'cozy mode'],
+      read:   ['reading actually', 'literary girlypop', 'a girl with a book', 'crashout chapter'],
+      wash:   ['cleansing', 'rinse cycle', 'splash', 'self care moment'],
+      gaze:   c === rose ? ['so real', 'understood the assignment', 'serving', 'delulu queen'] : ['look at u go', 'cute fr', 'iconic actually'],
+      bath:   ['soak era', 'spa core', 'bath girlypop', 'hot girl bath'],
+      pee:    ['brb pls', 'one sec bestie', 'urgent'],
+      dress:  ['fit check', 'serving lewks', 'outfit moment', 'dressed up for no reason'],
+      lamp:   ['click', 'mood lighting fr', 'ambience'],
     }[f.action];
-    if (tip) bubble(i, tip, 1.7);
+    if (tipPool) bubble(i, tipPool[(Math.random() * tipPool.length) | 0], 1.7);
     if (f.action === 'pet-meeko') {
-      const lines = ['hi meeko ♥', "who's a good kitty", 'soft floof', 'meeko ♪', '*scritches*'];
+      const lines = ['meeko my beloved', 'meeko ate', '*pet pet*', 'cat girl supremacy', 'ily meeko', 'literally my fav', 'so so soft'];
       bubble(i, lines[(Math.random() * lines.length) | 0], 1.8);
       meeko.purrTimer = 3.5;
       meeko.sitTimer = Math.max(meeko.sitTimer, 2.5);
@@ -739,7 +751,7 @@
       setTimeout(() => { if (c.using === f) stopUsing(c); }, 100);
     }
     if (f.action === 'remember') {
-      const lines = ['miss you, monica', 'forever loved ♥', '*lights candle*', 'tiny tabby angel'];
+      const lines = ['monica fr forever', 'tiny tabby legend', 'we love u angel', '*lights candle*', 'my heart', 'monica core memory'];
       bubble(i, lines[(Math.random() * lines.length) | 0], 2.4);
       spawnHearts(f.x + f.w / 2, f.y - 4, 4, '#caa6ff');
       addHearts(1);
