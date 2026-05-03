@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Our Apartment · Alex & Rose</title>
+<style>
+  :root {
+    --bg: #1d1936;
+    --panel: #2a2347;
+    --panel-2: #1a1530;
+    --ink: #fef8ee;
+    --muted: #b9b0d6;
+    --line: #3a325a;
+    --accent: #ffd166;
+    --pink: #ff8aa8;
+    --rose: #d63b6c;
+    --teal: #6cdac6;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: radial-gradient(1200px 800px at 70% -10%, #4a3a8a 0%, #1d1936 60%) no-repeat fixed;
+    color: var(--ink);
+    font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+  #wrap {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 14px 12px;
+  }
+  #titlebar {
+    width: 100%; max-width: 820px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 4px 8px 10px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+  .brand .heart { color: var(--pink); }
+  .brand small { font-weight: 500; color: var(--muted); margin-left: 6px; font-size: 12px; }
+  #help-toggle {
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  #help-toggle:hover { color: var(--ink); }
+
+  #stage {
+    position: relative; width: 800px; max-width: 100%;
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,0.7), 0 0 0 1px var(--line);
+    background: #0e0c1c;
+  }
+  #stage canvas {
+    display: block; width: 100%; height: auto; image-rendering: pixelated;
+  }
+
+  #hud {
+    position: absolute; top: 10px; left: 12px; right: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    pointer-events: none;
+    font-size: 13px;
+  }
+  .hud-pill {
+    background: rgba(20,16,40,0.78);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--ink);
+    padding: 6px 12px; border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 600;
+  }
+  .hud-pill .room { color: var(--muted); font-weight: 500; }
+  .hud-pill .swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .hud-pill .swatch.alex { background: #f3d27a; }
+  .hud-pill .swatch.rose { background: #4a2238; }
+  .hud-pill .heart { color: var(--pink); }
+
+  #prompt {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    background: rgba(20,16,40,0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--ink);
+    padding: 8px 14px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0; transition: opacity .15s ease;
+  }
+  #prompt.show { opacity: 1; }
+  #prompt kbd {
+    background: rgba(255,255,255,0.12);
+    border-radius: 5px; padding: 2px 6px; font-size: 11px; font-weight: 700;
+    margin-right: 6px; font-family: ui-monospace, monospace;
+  }
+
+  #help {
+    position: absolute; inset: 0; background: rgba(8,6,16,0.86);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #help.show { display: flex; }
+  #help .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    padding: 24px 26px; max-width: 560px; width: 100%;
+    line-height: 1.55;
+  }
+  #help h2 { margin: 0 0 8px; font-size: 22px; letter-spacing: -0.01em; }
+  #help p { color: var(--muted); margin: 0 0 14px; font-size: 14px; }
+  #help table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  #help td { padding: 5px 0; vertical-align: top; }
+  #help td.k { color: var(--accent); font-weight: 700; width: 130px; font-family: ui-monospace, monospace; font-size: 12px; }
+  #help .close {
+    margin-top: 14px; background: var(--accent); color: #2a1a05;
+    border: none; border-radius: 10px; padding: 10px 16px;
+    font: inherit; font-weight: 700; cursor: pointer;
+  }
+
+  #title-screen {
+    position: absolute; inset: 0; background: linear-gradient(180deg, #2a2055 0%, #1a1638 100%);
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 24px;
+  }
+  #title-screen.hidden { display: none; }
+  #title-screen .inner { max-width: 480px; }
+  #title-screen h1 { font-size: 36px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  #title-screen .sub { color: var(--muted); margin-bottom: 18px; font-size: 14px; }
+  #title-screen .pair {
+    display: flex; justify-content: center; align-items: end; gap: 18px; margin: 18px 0 22px;
+  }
+  #title-screen .who { text-align: center; font-size: 13px; color: var(--muted); }
+  #title-screen .who .name { color: var(--ink); font-weight: 700; font-size: 16px; margin-top: 6px; }
+  #title-screen button {
+    background: var(--accent); color: #2a1a05;
+    border: none; border-radius: 12px; padding: 12px 22px;
+    font: inherit; font-weight: 700; cursor: pointer; font-size: 16px;
+    box-shadow: 0 10px 30px -10px rgba(255, 209, 102, 0.4);
+  }
+  #title-screen .hint { color: var(--muted); font-size: 12px; margin-top: 14px; }
+
+  footer { color: var(--muted); font-size: 11px; margin-top: 12px; opacity: 0.6; }
+
+  @media (max-width: 820px) {
+    #stage { width: 100%; }
+    #titlebar .brand small { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="titlebar">
+    <div class="brand">our apartment <span class="heart">♥</span><small>alex &amp; rose</small></div>
+    <button id="help-toggle">how to play</button>
+  </div>
+
+  <div id="stage">
+    <canvas id="game" width="800" height="576"></canvas>
+
+    <div id="hud">
+      <div class="hud-pill">
+        <span class="swatch" id="active-swatch"></span>
+        <span id="active-name">—</span>
+        <span class="heart">♥</span>
+        <span id="hearts">0</span>
+      </div>
+      <div class="hud-pill"><span class="room" id="room-name">—</span></div>
+    </div>
+
+    <div id="prompt"></div>
+
+    <div id="help">
+      <div class="panel">
+        <h2>how to play</h2>
+        <p>This is your apartment. You're playing as Alex (blonde) by default. Rose (dark hair) wanders around doing her own thing — tap <kbd>Tab</kbd> to switch who you control. The other one becomes the NPC.</p>
+        <table>
+          <tr><td class="k">↑ ← ↓ → / WASD</td><td>walk</td></tr>
+          <tr><td class="k">Space / E</td><td>interact with whatever you're standing next to</td></tr>
+          <tr><td class="k">Tab</td><td>switch between Alex &amp; Rose</td></tr>
+          <tr><td class="k">M</td><td>sing your song (Alex's lullaby / Rose's villain anthem)</td></tr>
+          <tr><td class="k">H</td><td>heart-bomb the other one (cheesy)</td></tr>
+          <tr><td class="k">Esc</td><td>close this</td></tr>
+        </table>
+        <p style="margin-top:14px">Hearts go up when you interact with stuff and especially when you're together — both on the sofa, both in bed, etc. Walk Alex over to bed and press space → lullaby. Walk Rose to the mirror → villain song.</p>
+        <button class="close" id="help-close">got it</button>
+      </div>
+    </div>
+
+    <div id="title-screen">
+      <div class="inner">
+        <h1>Our Apartment</h1>
+        <div class="sub">a tiny home for the two of us</div>
+        <div class="pair">
+          <div class="who"><canvas id="t-alex" width="80" height="100"></canvas><div class="name">Alex</div></div>
+          <div class="who"><canvas id="t-rose" width="80" height="100"></canvas><div class="name">Rose</div></div>
+        </div>
+        <button id="enter-btn">enter the apartment</button>
+        <div class="hint">arrows / wasd to walk · tab to swap who you control</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>made with love · single-player on each Mac · scoot Tab to swap who you're playing</footer>
+</div>
+
+<script>
+(() => {
+  // ------------------ constants & setup ------------------
+  const TILE = 32;
+  const MAP_W = 25, MAP_H = 18;
+  const W = MAP_W * TILE; // 800
+  const H = MAP_H * TILE; // 576
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // ------------------ map ------------------
+  // 0 floor, 1 wall, 2 outer wall (drawn slightly different)
+  const map = (() => {
+    const m = [];
+    for (let y = 0; y < MAP_H; y++) {
+      const row = [];
+      for (let x = 0; x < MAP_W; x++) row.push(0);
+      m.push(row);
+    }
+    // outer walls
+    for (let x = 0; x < MAP_W; x++) { m[0][x] = 2; m[MAP_H - 1][x] = 2; }
+    for (let y = 0; y < MAP_H; y++) { m[y][0] = 2; m[y][MAP_W - 1] = 2; }
+    // vertical wall at x=8
+    for (let y = 1; y < MAP_H - 1; y++) m[y][8] = 1;
+    // horizontal walls (left side)
+    for (let x = 1; x < 8; x++) { m[6][x] = 1; m[12][x] = 1; }
+    // horizontal wall on right between balcony & living
+    for (let x = 9; x < MAP_W - 1; x++) m[5][x] = 1;
+    // doors (knock holes)
+    m[3][8] = 0;  // bedroom <-> living
+    m[9][8] = 0;  // kitchen <-> living
+    m[15][8] = 0; // bathroom <-> living
+    m[6][3] = 0;  // bedroom <-> kitchen
+    m[12][3] = 0; // kitchen <-> bathroom
+    m[5][16] = 0; // living <-> balcony
+    return m;
+  })();
+
+  const rooms = [
+    { name: 'Bedroom',     x: 0, y: 0, w: 9 * TILE,            h: 7 * TILE,             color: '#f3d6e6', accent: '#e7a8c4' },
+    { name: 'Balcony',     x: 8 * TILE, y: 0, w: (MAP_W - 8) * TILE, h: 6 * TILE,        color: '#cfe6cf', accent: '#a4c89f' },
+    { name: 'Living Room', x: 8 * TILE, y: 5 * TILE, w: (MAP_W - 8) * TILE, h: (MAP_H - 5) * TILE, color: '#fbe2bd', accent: '#ddae6a' },
+    { name: 'Kitchen',     x: 0, y: 6 * TILE, w: 9 * TILE, h: 7 * TILE,                  color: '#dde8f4', accent: '#a4bbd2' },
+    { name: 'Bathroom',    x: 0, y: 12 * TILE, w: 9 * TILE, h: 6 * TILE,                 color: '#e6dcf2', accent: '#b29bd0' },
+  ];
+
+  const roomAt = (px, py) => {
+    // Find smallest containing room (rooms can overlap at borders; pick one matching tile center)
+    for (const r of rooms) {
+      if (px >= r.x && px < r.x + r.w && py >= r.y && py < r.y + r.h) return r;
+    }
+    return null;
+  };
+
+  // ------------------ furniture ------------------
+  // x,y,w,h in pixels. interact provides the action label & callback.
+  const furniture = [
+    // BEDROOM
+    { id: 'bed',      kind: 'bed',     x: 48,  y: 64,  w: 96, h: 128, label: 'cuddle in bed',  short: 'sleep',  action: 'sleep',  bothBoost: 6 },
+    { id: 'dresser',  kind: 'dresser', x: 160, y: 48,  w: 64, h: 32,  label: 'change outfit',  short: 'dress',  action: 'dress' },
+    { id: 'rug-bed',  kind: 'rug',     x: 32,  y: 152, w: 192, h: 24, decor: true },
+    { id: 'lamp-bed', kind: 'lamp',    x: 192, y: 96,  w: 24, h: 24,  label: 'flick lamp',     short: 'lamp',   action: 'lamp', solidOverride: false },
+
+    // BALCONY
+    { id: 'plants-l', kind: 'plants',  x: 304, y: 32,  w: 56, h: 36,  label: 'water plants',   short: 'water',  action: 'water' },
+    { id: 'plants-r', kind: 'plants',  x: 624, y: 32,  w: 56, h: 36,  label: 'water plants',   short: 'water',  action: 'water' },
+    { id: 'bal-chair',kind: 'chair',   x: 528, y: 96,  w: 36, h: 44,  label: 'lounge outside', short: 'lounge', action: 'lounge' },
+    { id: 'bal-table',kind: 'side-table', x: 576, y: 104, w: 28, h: 28, label: 'sip drink',    short: 'sip',    action: 'sip' },
+    { id: 'rug-bal',  kind: 'rug-bal', x: 504, y: 88,  w: 168, h: 64, decor: true },
+
+    // LIVING ROOM
+    { id: 'sofa',     kind: 'sofa',    x: 304, y: 224, w: 192, h: 64,  label: 'cuddle on sofa', short: 'sit',    action: 'sit',  bothBoost: 4 },
+    { id: 'coffee',   kind: 'coffee',  x: 352, y: 312, w: 96, h: 36,   label: 'flip a magazine', short: 'read',  action: 'read' },
+    { id: 'tv',       kind: 'tv',      x: 608, y: 192, w: 96, h: 36,   label: 'watch tv',        short: 'tv',    action: 'tv' },
+    { id: 'rug-liv',  kind: 'rug-liv', x: 320, y: 224, w: 256, h: 144, decor: true },
+    { id: 'bookcase', kind: 'bookcase',x: 296, y: 192, w: 64,  h: 24,  label: 'pick a book',     short: 'read',  action: 'read' },
+
+    // KITCHEN
+    { id: 'fridge',   kind: 'fridge',  x: 32,  y: 224, w: 56, h: 72,  label: 'snack from fridge', short: 'snack', action: 'snack' },
+    { id: 'stove',    kind: 'stove',   x: 96,  y: 224, w: 56, h: 56,  label: 'cook something',    short: 'cook',  action: 'cook' },
+    { id: 'sink-k',   kind: 'sink-k',  x: 160, y: 224, w: 56, h: 40,  label: 'wash up',           short: 'wash',  action: 'wash' },
+    { id: 'k-table',  kind: 'k-table', x: 64,  y: 320, w: 128, h: 56, label: 'sit at table',      short: 'eat',   action: 'eat',  bothBoost: 3 },
+
+    // BATHROOM
+    { id: 'bath',     kind: 'bath',    x: 32,  y: 480, w: 112, h: 64, label: 'take a bath',       short: 'bath',  action: 'bath' },
+    { id: 'mirror',   kind: 'mirror',  x: 168, y: 432, w: 56, h: 16,  label: 'look in mirror',    short: 'gaze',  action: 'gaze', solidOverride: false },
+    { id: 'sink-b',   kind: 'sink-b',  x: 168, y: 448, w: 56, h: 32,  label: 'splash water',      short: 'wash',  action: 'wash' },
+    { id: 'toilet',   kind: 'toilet',  x: 232, y: 488, w: 32, h: 40,  label: 'pee real quick',    short: 'go',    action: 'pee' },
+    { id: 'rug-bath', kind: 'rug-bath',x: 32,  y: 552, w: 128, h: 16, decor: true },
+  ];
+
+  furniture.forEach(f => {
+    if (f.decor) f.solid = false;
+    else if (f.solidOverride === false) f.solid = false;
+    else f.solid = true;
+  });
+
+  // ------------------ characters ------------------
+  function makeChar(opts) {
+    return {
+      name: opts.name,
+      x: opts.x, y: opts.y,
+      vx: 0, vy: 0,
+      facing: 'down',
+      hair: opts.hair, hairAccent: opts.hairAccent,
+      shirt: opts.shirt, pants: opts.pants,
+      skin: opts.skin || '#ffe1c4',
+      walking: false, walkPhase: 0,
+      using: null,           // furniture being used or null
+      usingTimer: 0,
+      ai: opts.ai || null,
+      song: opts.song,
+      lastInteract: 0,
+      hearts: 0,             // personal contribution to shared hearts
+    };
+  }
+
+  const alex = makeChar({
+    name: 'Alex',
+    x: 4 * TILE, y: 3 * TILE,
+    hair: '#e9c66a', hairAccent: '#c79f48',
+    shirt: '#6cdac6', pants: '#3a4252', skin: '#ffd9b8',
+    song: 'lullaby',
+    ai: { state: 'idle', cooldown: 0, target: null, usingFor: 0, songRoll: 0 },
+  });
+
+  const rose = makeChar({
+    name: 'Rose',
+    x: 6 * TILE, y: 3 * TILE,
+    hair: '#3b1d2c', hairAccent: '#21111a',
+    shirt: '#ff8aa8', pants: '#2a253a', skin: '#fbd0bd',
+    song: 'villain',
+    ai: { state: 'idle', cooldown: 0, target: null, usingFor: 0, songRoll: 0 },
+  });
+
+  let activeIdx = 0; // 0 = alex
+  const chars = [alex, rose];
+  const active = () => chars[activeIdx];
+  const npc = () => chars[1 - activeIdx];
+
+  // ------------------ shared state ------------------
+  let totalHearts = parseInt(localStorage.getItem('apt_hearts') || '0', 10);
+  document.getElementById('hearts').textContent = totalHearts;
+
+  function addHearts(n) {
+    totalHearts += n;
+    if (totalHearts < 0) totalHearts = 0;
+    document.getElementById('hearts').textContent = totalHearts;
+    localStorage.setItem('apt_hearts', totalHearts);
+  }
+
+  // ------------------ songs ------------------
+  const SONGS = {
+    lullaby: {
+      title: "Alexandra (lullaby)",
+      character: 'Alex',
+      lines: [
+        "Alexandra...",
+        "It's time to take off your bra",
+        "It's time to relax",
+        "So lie on your back",
+        "Alexandra",
+        "The lion goes rah",
+        "The peacock goes wah",
+        "Alexandra",
+      ],
+      tone: 'soft',
+    },
+    villain: {
+      title: "Rose Theme (villain anthem)",
+      character: 'Rose',
+      lines: [
+        "Rows and columns...",
+        "Rowers and kayaks",
+        "Rose and fallen",
+        "Rose and daisies",
+      ],
+      tone: 'menacing',
+    },
+  };
+
+  // ------------------ bubbles (speech) ------------------
+  // Each bubble: { ownerIdx, text, ttl, totalTtl, tone }
+  const bubbles = [];
+  function bubble(ownerIdx, text, ttl = 2.6, tone = 'neutral') {
+    bubbles.push({ ownerIdx, text, ttl, totalTtl: ttl, tone });
+  }
+  function singSong(songKey, ownerIdx) {
+    const s = SONGS[songKey];
+    if (!s) return;
+    let delay = 0;
+    s.lines.forEach((line, i) => {
+      setTimeout(() => bubble(ownerIdx, line, 2.6, s.tone), delay);
+      delay += 1900;
+    });
+  }
+
+  // ------------------ floating hearts ------------------
+  const particles = [];
+  function spawnHearts(x, y, n = 5, color = '#ff8aa8') {
+    for (let i = 0; i < n; i++) {
+      particles.push({
+        x: x + (Math.random() - 0.5) * 10,
+        y: y - 8,
+        vx: (Math.random() - 0.5) * 30,
+        vy: -30 - Math.random() * 30,
+        ttl: 1.0 + Math.random() * 0.6,
+        total: 1.4,
+        color,
+        size: 6 + Math.random() * 4,
+      });
+    }
+  }
+
+  // ------------------ collision ------------------
+  // Character bounding box for collision: small box at feet
+  const CHAR_HW = 6;  // half width
+  const CHAR_FH = 5;  // feet height extent above feet point
+
+  function collidesAt(x, y, exclude) {
+    // x,y is feet position
+    const bx = x - CHAR_HW, by = y - CHAR_FH;
+    const bw = CHAR_HW * 2, bh = CHAR_FH * 2;
+    // wall tiles
+    const tx0 = Math.floor(bx / TILE), ty0 = Math.floor(by / TILE);
+    const tx1 = Math.floor((bx + bw - 1) / TILE), ty1 = Math.floor((by + bh - 1) / TILE);
+    for (let ty = ty0; ty <= ty1; ty++) {
+      for (let tx = tx0; tx <= tx1; tx++) {
+        if (ty < 0 || ty >= MAP_H || tx < 0 || tx >= MAP_W) return true;
+        if (map[ty][tx] !== 0) return true;
+      }
+    }
+    // furniture
+    for (const f of furniture) {
+      if (!f.solid) continue;
+      if (bx < f.x + f.w && bx + bw > f.x && by < f.y + f.h && by + bh > f.y) return true;
+    }
+    return false;
+  }
+
+  // ------------------ input ------------------
+  const keys = {};
+  let keyEdge = {}; // edges this frame
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Tab') e.preventDefault();
+    if (titleScreenVisible && (e.key === 'Enter' || e.key === ' ')) { hideTitle(); return; }
+    if (e.repeat) return;
+    keys[e.key.toLowerCase()] = true;
+    keyEdge[e.key.toLowerCase()] = true;
+  });
+  window.addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false;
+  });
+
+  // help
+  const helpOverlay = document.getElementById('help');
+  document.getElementById('help-toggle').addEventListener('click', () => helpOverlay.classList.toggle('show'));
+  document.getElementById('help-close').addEventListener('click', () => helpOverlay.classList.remove('show'));
+
+  // title
+  let titleScreenVisible = true;
+  const titleEl = document.getElementById('title-screen');
+  function hideTitle() {
+    titleScreenVisible = false;
+    titleEl.classList.add('hidden');
+  }
+  document.getElementById('enter-btn').addEventListener('click', hideTitle);
+
+  // ------------------ interaction proximity ------------------
+  function nearestInteractable(c) {
+    let best = null, bestDist = 28; // max distance to interact
+    for (const f of furniture) {
+      if (!f.label) continue;
+      const fx = f.x + f.w / 2, fy = f.y + f.h / 2;
+      const dx = c.x - fx, dy = c.y - fy;
+      // distance to nearest edge of furniture
+      const ex = Math.max(0, Math.abs(dx) - f.w / 2);
+      const ey = Math.max(0, Math.abs(dy) - f.h / 2);
+      const d = Math.hypot(ex, ey);
+      if (d < bestDist) { bestDist = d; best = f; }
+    }
+    return best;
+  }
+
+  function startUsing(c, f) {
+    c.using = f;
+    c.usingTimer = 0;
+    c.lastInteract = perfNow();
+    addHearts(1);
+    // snap a little toward the furniture for visual nicety
+    const fx = f.x + f.w / 2;
+    if (c.x < fx) c.facing = 'right';
+    else if (c.x > fx) c.facing = 'left';
+    // event
+    onUseStart(c, f);
+  }
+  function stopUsing(c) {
+    if (c.using) onUseEnd(c, c.using);
+    c.using = null;
+    c.usingTimer = 0;
+  }
+
+  function onUseStart(c, f) {
+    if (f.action === 'sleep')  bubble(charIdx(c), c === alex ? 'mmm bed.' : 'sleepy.', 1.8);
+    if (f.action === 'sit')    bubble(charIdx(c), 'sofa life.', 1.8);
+    if (f.action === 'eat')    bubble(charIdx(c), 'snack incoming', 1.8);
+    if (f.action === 'snack')  bubble(charIdx(c), 'fridge raid', 1.8);
+    if (f.action === 'cook')   bubble(charIdx(c), 'cheffing', 1.8);
+    if (f.action === 'water')  bubble(charIdx(c), 'plant babies', 1.8);
+    if (f.action === 'lounge') bubble(charIdx(c), 'sun + chair = yes', 1.8);
+    if (f.action === 'sip')    bubble(charIdx(c), 'tiny drink', 1.6);
+    if (f.action === 'tv')     bubble(charIdx(c), 'tv noises', 1.8);
+    if (f.action === 'read')   bubble(charIdx(c), 'reading', 1.8);
+    if (f.action === 'wash')   bubble(charIdx(c), 'splash splash', 1.6);
+    if (f.action === 'gaze')   bubble(charIdx(c), c === rose ? 'hello, me.' : 'look at u', 2.0);
+    if (f.action === 'bath')   bubble(charIdx(c), 'bath time', 1.8);
+    if (f.action === 'pee')    bubble(charIdx(c), 'brb', 1.4);
+    if (f.action === 'dress')  bubble(charIdx(c), 'outfit change', 1.8);
+    if (f.action === 'lamp')   bubble(charIdx(c), 'click', 1.2);
+
+    // special triggers
+    if (c === alex && f.action === 'sleep') {
+      setTimeout(() => { if (c.using === f) singSong('lullaby', charIdx(c)); }, 600);
+    }
+    if (c === rose && f.action === 'gaze') {
+      setTimeout(() => { if (c.using === f) singSong('villain', charIdx(c)); }, 500);
+    }
+    // both characters using same furniture with bothBoost
+    if (f.bothBoost && otherCharIs(c, f)) {
+      addHearts(f.bothBoost);
+      spawnHearts(f.x + f.w / 2, f.y - 4, f.bothBoost, '#ff5f8a');
+    }
+  }
+  function onUseEnd(c, f) {}
+
+  function otherCharIs(c, f) {
+    const o = c === alex ? rose : alex;
+    if (!o.using) return false;
+    return o.using === f;
+  }
+  function charIdx(c) { return c === alex ? 0 : 1; }
+
+  // ------------------ AI for the non-active character ------------------
+  const interestKinds = ['bed','sofa','tv','fridge','plants','bath','mirror','chair','k-table','bookcase','coffee','sink-k','dresser','side-table'];
+
+  function pickInterest(c) {
+    const candidates = furniture.filter(f => f.solid && f.label && interestKinds.includes(f.kind));
+    // prefer furniture in different room than active player half the time
+    const choice = candidates[(Math.random() * candidates.length) | 0];
+    return {
+      x: choice.x + choice.w / 2,
+      y: choice.y + choice.h + 6, // approach from south
+      furniture: choice,
+    };
+  }
+
+  function npcUpdate(c, dt) {
+    const ai = c.ai;
+    if (c.using) {
+      ai.usingFor += dt;
+      // Maybe sing if at bed or mirror
+      ai.songRoll += dt;
+      if (ai.songRoll > 1.0) {
+        ai.songRoll = 0;
+        if (c === alex && c.using.action === 'sleep' && Math.random() < 0.20) singSong('lullaby', charIdx(c));
+        if (c === rose && c.using.action === 'gaze' && Math.random() < 0.30) singSong('villain', charIdx(c));
+      }
+      if (ai.usingFor > (4 + Math.random() * 5)) {
+        stopUsing(c);
+        ai.usingFor = 0;
+        ai.cooldown = 0.5 + Math.random() * 1.5;
+        ai.state = 'idle';
+        ai.target = null;
+      }
+      return;
+    }
+
+    if (ai.state === 'idle') {
+      ai.cooldown -= dt;
+      if (ai.cooldown <= 0) {
+        ai.target = pickInterest(c);
+        ai.state = 'walking';
+      }
+      return;
+    }
+
+    if (ai.state === 'walking') {
+      const speed = 70; // px/s
+      const tx = ai.target.x, ty = ai.target.y;
+      const dx = tx - c.x, dy = ty - c.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 5) {
+        // arrived
+        const nf = nearestInteractable(c);
+        if (nf && nf === ai.target.furniture) {
+          startUsing(c, nf);
+          c.walking = false;
+        } else {
+          ai.cooldown = 0.5;
+          ai.state = 'idle';
+        }
+        return;
+      }
+      // try axis-separated movement, with a tiny bias to break ties
+      const stepX = Math.sign(dx) * Math.min(Math.abs(dx), speed * dt);
+      const stepY = Math.sign(dy) * Math.min(Math.abs(dy), speed * dt);
+      // try X then Y; if blocked on one, try perpendicular jitter
+      let moved = false;
+      if (Math.abs(stepX) > Math.abs(stepY)) {
+        if (!collidesAt(c.x + stepX, c.y, c)) { c.x += stepX; moved = true; }
+        if (!collidesAt(c.x, c.y + stepY, c)) { c.y += stepY; moved = true; }
+      } else {
+        if (!collidesAt(c.x, c.y + stepY, c)) { c.y += stepY; moved = true; }
+        if (!collidesAt(c.x + stepX, c.y, c)) { c.x += stepX; moved = true; }
+      }
+      if (!moved) {
+        // try sidestep
+        const tries = [[8,0],[-8,0],[0,8],[0,-8]];
+        for (const [ox, oy] of tries) {
+          if (!collidesAt(c.x + ox, c.y + oy, c)) { c.x += ox * dt * 5; c.y += oy * dt * 5; break; }
+        }
+        // give up if stuck
+        ai.cooldown = 1.0; ai.state = 'idle';
+      }
+      // facing
+      if (Math.abs(stepX) > Math.abs(stepY)) c.facing = stepX > 0 ? 'right' : 'left';
+      else c.facing = stepY > 0 ? 'down' : 'up';
+      c.walking = true;
+      c.walkPhase += dt * 8;
+    }
+  }
+
+  // ------------------ player input update ------------------
+  function playerUpdate(c, dt) {
+    if (c.using) {
+      // any movement key cancels using
+      if (keys['arrowup']||keys['arrowdown']||keys['arrowleft']||keys['arrowright']||keys['w']||keys['a']||keys['s']||keys['d']) {
+        stopUsing(c);
+      }
+      return;
+    }
+    let dx = 0, dy = 0;
+    if (keys['arrowup'] || keys['w']) dy -= 1;
+    if (keys['arrowdown'] || keys['s']) dy += 1;
+    if (keys['arrowleft'] || keys['a']) dx -= 1;
+    if (keys['arrowright'] || keys['d']) dx += 1;
+    if (dx && dy) { dx *= 0.7071; dy *= 0.7071; }
+    const speed = 110;
+    const nx = c.x + dx * speed * dt;
+    const ny = c.y + dy * speed * dt;
+    if (!collidesAt(nx, c.y, c)) c.x = nx;
+    if (!collidesAt(c.x, ny, c)) c.y = ny;
+
+    if (dx || dy) {
+      c.walking = true;
+      c.walkPhase += dt * 10;
+      if (Math.abs(dx) > Math.abs(dy)) c.facing = dx > 0 ? 'right' : 'left';
+      else c.facing = dy > 0 ? 'down' : 'up';
+    } else {
+      c.walking = false;
+    }
+  }
+
+  // ------------------ main loop ------------------
+  let last = performance.now();
+  function perfNow() { return performance.now(); }
+
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+
+    if (!titleScreenVisible) {
+      // Tab → swap
+      if (keyEdge['tab']) {
+        activeIdx = 1 - activeIdx;
+        // reset any using of the new active so player has control
+        // (don't auto-cancel — let them break it themselves)
+      }
+      // Interact
+      if (keyEdge[' '] || keyEdge['e']) {
+        const c = active();
+        if (c.using) {
+          stopUsing(c);
+        } else {
+          const f = nearestInteractable(c);
+          if (f) startUsing(c, f);
+        }
+      }
+      // Sing
+      if (keyEdge['m']) {
+        const c = active();
+        singSong(c.song, charIdx(c));
+      }
+      // Heart bomb (cheesy gesture)
+      if (keyEdge['h']) {
+        const c = active(), o = c === alex ? rose : alex;
+        bubble(charIdx(c), '♥ ' + o.name + ' ♥', 1.6);
+        spawnHearts(c.x, c.y - 18, 6, '#ff5f8a');
+        addHearts(1);
+      }
+      // Esc closes help
+      if (keyEdge['escape']) helpOverlay.classList.remove('show');
+
+      // Update active player
+      playerUpdate(active(), dt);
+      // Update NPC
+      npcUpdate(npc(), dt);
+
+      // ttl bubbles
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].ttl -= dt;
+        if (bubbles[i].ttl <= 0) bubbles.splice(i, 1);
+      }
+      // particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 20 * dt; // float up then drift
+        p.ttl -= dt;
+        if (p.ttl <= 0) particles.splice(i, 1);
+      }
+    }
+
+    keyEdge = {};
+    render();
+    updateHud();
+    requestAnimationFrame(loop);
+  }
+
+  // ------------------ rendering ------------------
+  function render() {
+    // floor by room
+    rooms.forEach(r => {
+      ctx.fillStyle = r.color;
+      ctx.fillRect(r.x, r.y, r.w, r.h);
+      // tile pattern lines (subtle)
+      ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let gx = r.x; gx <= r.x + r.w; gx += TILE) {
+        ctx.moveTo(gx + 0.5, r.y); ctx.lineTo(gx + 0.5, r.y + r.h);
+      }
+      for (let gy = r.y; gy <= r.y + r.h; gy += TILE) {
+        ctx.moveTo(r.x, gy + 0.5); ctx.lineTo(r.x + r.w, gy + 0.5);
+      }
+      ctx.stroke();
+    });
+
+    // decorative furniture (rugs etc) drawn before solid ones
+    furniture.filter(f => f.decor).forEach(drawFurniture);
+
+    // walls — drawn over floor
+    drawWalls();
+
+    // build a sortable list of solid furniture + characters by Y for proper depth
+    const sortable = [];
+    furniture.filter(f => !f.decor).forEach(f => sortable.push({ y: f.y + f.h, draw: () => drawFurniture(f) }));
+    chars.forEach(c => sortable.push({ y: c.y, draw: () => drawChar(c) }));
+    sortable.sort((a, b) => a.y - b.y);
+    sortable.forEach(s => s.draw());
+
+    // particles
+    particles.forEach(p => {
+      const t = p.ttl / p.total;
+      ctx.globalAlpha = Math.max(0, Math.min(1, t));
+      drawHeart(p.x, p.y, p.size, p.color);
+      ctx.globalAlpha = 1;
+    });
+
+    // bubbles
+    drawBubbles();
+
+    // active character indicator
+    drawActiveRing(active());
+  }
+
+  function drawWalls() {
+    // walls are drawn as soft solid rectangles
+    const wallColor = '#fbf3e3';
+    const trim = '#caaf85';
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        const t = map[y][x];
+        if (t === 0) continue;
+        const px = x * TILE, py = y * TILE;
+        if (t === 2) {
+          // outer wall: thicker
+          ctx.fillStyle = wallColor;
+          ctx.fillRect(px, py, TILE, TILE);
+          ctx.fillStyle = trim;
+          // bottom edge shading
+          if (y === 0) ctx.fillRect(px, py + TILE - 4, TILE, 4);
+          if (y === MAP_H - 1) ctx.fillRect(px, py, TILE, 4);
+          if (x === 0) ctx.fillRect(px + TILE - 4, py, 4, TILE);
+          if (x === MAP_W - 1) ctx.fillRect(px, py, 4, TILE);
+        } else {
+          ctx.fillStyle = wallColor;
+          ctx.fillRect(px, py, TILE, TILE);
+          ctx.fillStyle = trim;
+          ctx.fillRect(px, py + TILE - 3, TILE, 3);
+        }
+      }
+    }
+  }
+
+  // furniture drawing
+  function drawFurniture(f) {
+    const fn = furnitureDrawers[f.kind];
+    if (fn) fn(f); else { ctx.fillStyle = '#888'; ctx.fillRect(f.x, f.y, f.w, f.h); }
+  }
+
+  const furnitureDrawers = {
+    bed(f) {
+      // frame
+      ctx.fillStyle = '#7a5b3f';
+      ctx.fillRect(f.x - 4, f.y, f.w + 8, f.h + 4);
+      // mattress
+      ctx.fillStyle = '#fcf6ec';
+      ctx.fillRect(f.x, f.y + 4, f.w, f.h - 8);
+      // pillows
+      ctx.fillStyle = '#f7c8d8';
+      roundRect(f.x + 6, f.y + 8, (f.w - 18) / 2, 22, 4, true);
+      ctx.fillStyle = '#fde0a4';
+      roundRect(f.x + f.w / 2 + 3, f.y + 8, (f.w - 18) / 2, 22, 4, true);
+      // blanket
+      ctx.fillStyle = '#cd7d96';
+      ctx.fillRect(f.x, f.y + f.h - 56, f.w, 50);
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      for (let i = 0; i < f.w; i += 8) ctx.fillRect(f.x + i, f.y + f.h - 56, 1, 50);
+      // heart on blanket
+      drawHeart(f.x + f.w / 2, f.y + f.h - 30, 8, '#ec567f');
+    },
+    dresser(f) {
+      ctx.fillStyle = '#9c7148';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#7c5734';
+      ctx.fillRect(f.x + 4, f.y + 6, f.w - 8, f.h - 12);
+      ctx.fillStyle = '#3a2b18';
+      ctx.fillRect(f.x + f.w / 2 - 4, f.y + f.h / 2 - 1, 8, 2);
+    },
+    rug(f) {
+      ctx.fillStyle = '#b78aa3';
+      roundRect(f.x, f.y, f.w, f.h, 6, true);
+      ctx.fillStyle = '#9c6b88';
+      for (let i = 0; i < f.w; i += 12) ctx.fillRect(f.x + i, f.y + f.h / 2 - 1, 6, 2);
+    },
+    'rug-bal'(f) {
+      ctx.fillStyle = '#7baea0';
+      roundRect(f.x, f.y, f.w, f.h, 8, true);
+    },
+    'rug-liv'(f) {
+      ctx.fillStyle = '#e0a96d';
+      roundRect(f.x, f.y, f.w, f.h, 10, true);
+      ctx.strokeStyle = '#b07c41'; ctx.lineWidth = 2;
+      ctx.strokeRect(f.x + 8, f.y + 8, f.w - 16, f.h - 16);
+    },
+    'rug-bath'(f) {
+      ctx.fillStyle = '#cdb6e6';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+    },
+    lamp(f) {
+      ctx.fillStyle = '#e6c075';
+      ctx.beginPath();
+      ctx.moveTo(f.x + f.w / 2 - 8, f.y);
+      ctx.lineTo(f.x + f.w / 2 + 8, f.y);
+      ctx.lineTo(f.x + f.w / 2 + 5, f.y + f.h - 6);
+      ctx.lineTo(f.x + f.w / 2 - 5, f.y + f.h - 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#5a4a30';
+      ctx.fillRect(f.x + f.w / 2 - 1, f.y + f.h - 6, 2, 6);
+      // glow
+      ctx.fillStyle = 'rgba(255, 220, 130, 0.18)';
+      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 8, 18, 0, Math.PI * 2); ctx.fill();
+    },
+    plants(f) {
+      ctx.fillStyle = '#5a3b22';
+      roundRect(f.x, f.y + f.h - 14, f.w, 14, 3, true);
+      ctx.fillStyle = '#3e7a3a';
+      ctx.beginPath(); ctx.arc(f.x + 14, f.y + 12, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + f.w - 14, f.y + 14, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#5b9d4f';
+      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + 8, 10, 0, Math.PI * 2); ctx.fill();
+    },
+    chair(f) {
+      ctx.fillStyle = '#8d4f3a';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#a76450';
+      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 12);
+      ctx.fillStyle = '#5b3526';
+      ctx.fillRect(f.x, f.y + f.h - 5, f.w, 5);
+    },
+    'side-table'(f) {
+      ctx.fillStyle = '#c79f7a';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#6c8ed0';
+      ctx.beginPath(); ctx.arc(f.x + f.w / 2, f.y + f.h / 2, 5, 0, Math.PI * 2); ctx.fill();
+    },
+    sofa(f) {
+      ctx.fillStyle = '#5a6acb';
+      roundRect(f.x, f.y, f.w, f.h, 8, true);
+      ctx.fillStyle = '#4150a0';
+      ctx.fillRect(f.x, f.y, f.w, 14);
+      // cushions
+      ctx.fillStyle = '#7280da';
+      const cw = (f.w - 12) / 3;
+      for (let i = 0; i < 3; i++) roundRect(f.x + 4 + i * (cw + 2), f.y + 18, cw, f.h - 24, 4, true);
+      // legs
+      ctx.fillStyle = '#2b2b2b';
+      ctx.fillRect(f.x + 2, f.y + f.h, 4, 4);
+      ctx.fillRect(f.x + f.w - 6, f.y + f.h, 4, 4);
+    },
+    coffee(f) {
+      ctx.fillStyle = '#7e5a3a';
+      roundRect(f.x, f.y, f.w, f.h, 5, true);
+      ctx.fillStyle = '#5a3f25';
+      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8);
+      // book on top
+      ctx.fillStyle = '#cf6764';
+      ctx.fillRect(f.x + 16, f.y + 8, 22, 10);
+    },
+    tv(f) {
+      ctx.fillStyle = '#222';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#5cdcff';
+      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8);
+      // scanlines
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      for (let i = 0; i < f.h - 8; i += 4) ctx.fillRect(f.x + 4, f.y + 4 + i, f.w - 8, 1);
+      // stand
+      ctx.fillStyle = '#444';
+      ctx.fillRect(f.x + f.w / 2 - 6, f.y + f.h, 12, 4);
+    },
+    bookcase(f) {
+      ctx.fillStyle = '#7c5a3a';
+      ctx.fillRect(f.x, f.y, f.w, f.h);
+      const colors = ['#cf6764','#dcb15c','#5fa0c8','#7eaf6a','#b67dca','#e0875f'];
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillRect(f.x + 3 + i * 7, f.y + 3, 6, f.h - 6);
+      }
+    },
+    fridge(f) {
+      ctx.fillStyle = '#e9eef4';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.strokeStyle = '#a3aebf'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(f.x, f.y + f.h * 0.4); ctx.lineTo(f.x + f.w, f.y + f.h * 0.4); ctx.stroke();
+      ctx.fillStyle = '#cad3df';
+      ctx.fillRect(f.x + f.w - 6, f.y + 6, 3, 8);
+      ctx.fillRect(f.x + f.w - 6, f.y + f.h * 0.4 + 6, 3, 8);
+      // magnet hearts
+      drawHeart(f.x + 12, f.y + 12, 6, '#ff5f8a');
+      drawHeart(f.x + 28, f.y + 18, 5, '#ffd166');
+    },
+    stove(f) {
+      ctx.fillStyle = '#3b3b3b';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#7c7c7c';
+      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 18);
+      ctx.fillStyle = '#222';
+      ctx.beginPath(); ctx.arc(f.x + 14, f.y + 14, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + f.w - 14, f.y + 14, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + 14, f.y + 30, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + f.w - 14, f.y + 30, 5, 0, Math.PI * 2); ctx.fill();
+    },
+    'sink-k'(f) {
+      ctx.fillStyle = '#cad3df';
+      roundRect(f.x, f.y, f.w, f.h, 4, true);
+      ctx.fillStyle = '#8a96a8';
+      roundRect(f.x + 4, f.y + 4, f.w - 8, f.h - 12, 3, true);
+      ctx.fillStyle = '#666';
+      ctx.fillRect(f.x + f.w / 2 - 1, f.y + 4, 2, 8);
+    },
+    'k-table'(f) {
+      ctx.fillStyle = '#a98260';
+      roundRect(f.x, f.y, f.w, f.h, 6, true);
+      ctx.fillStyle = '#8a6748';
+      ctx.fillRect(f.x + 4, f.y + 4, f.w - 8, f.h - 8);
+      // two plates
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(f.x + 28, f.y + f.h / 2, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + f.w - 28, f.y + f.h / 2, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#dcb15c';
+      ctx.beginPath(); ctx.arc(f.x + 28, f.y + f.h / 2, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#cf6764';
+      ctx.beginPath(); ctx.arc(f.x + f.w - 28, f.y + f.h / 2, 4, 0, Math.PI * 2); ctx.fill();
+    },
+    bath(f) {
+      ctx.fillStyle = '#d0e9eb';
+      roundRect(f.x, f.y, f.w, f.h, 14, true);
+      ctx.fillStyle = '#7fc2c7';
+      roundRect(f.x + 6, f.y + 6, f.w - 12, f.h - 12, 10, true);
+      // bubbles
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.beginPath(); ctx.arc(f.x + 24, f.y + 24, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + 50, f.y + 36, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + 78, f.y + 22, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(f.x + 92, f.y + 38, 4, 0, Math.PI * 2); ctx.fill();
+    },
+    mirror(f) {
+      // wall mirror
+      ctx.fillStyle = '#7a6a8c';
+      ctx.fillRect(f.x - 2, f.y - 2, f.w + 4, f.h + 4);
+      ctx.fillStyle = '#cee3f0';
+      ctx.fillRect(f.x, f.y, f.w, f.h);
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillRect(f.x + 4, f.y + 3, 12, 4);
+    },
+    'sink-b'(f) {
+      ctx.fillStyle = '#e9eef4';
+      roundRect(f.x, f.y, f.w, f.h, 5, true);
+      ctx.fillStyle = '#8a96a8';
+      roundRect(f.x + 6, f.y + 6, f.w - 12, f.h - 14, 3, true);
+      ctx.fillStyle = '#666';
+      ctx.fillRect(f.x + f.w / 2 - 1, f.y + 4, 2, 8);
+    },
+    toilet(f) {
+      ctx.fillStyle = '#f3f3f3';
+      roundRect(f.x, f.y + f.h - 22, f.w, 22, 8, true);
+      roundRect(f.x + 4, f.y, f.w - 8, 14, 4, true);
+    },
+  };
+
+  // ---- character drawing ----
+  function drawChar(c) {
+    const x = c.x | 0, y = c.y | 0;
+    const bob = c.walking ? Math.sin(c.walkPhase) * 1.2 : 0;
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 2, 9, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const headY = y - 22 + bob;
+    const bodyY = y - 14 + bob;
+
+    // legs
+    ctx.fillStyle = c.pants;
+    if (c.walking) {
+      const ph = Math.sin(c.walkPhase) * 2;
+      ctx.fillRect(x - 5, y - 6 + bob, 4, 8 + ph);
+      ctx.fillRect(x + 1, y - 6 + bob, 4, 8 - ph);
+    } else {
+      ctx.fillRect(x - 5, y - 6 + bob, 4, 8);
+      ctx.fillRect(x + 1, y - 6 + bob, 4, 8);
+    }
+    // shoes
+    ctx.fillStyle = '#1c1a26';
+    ctx.fillRect(x - 5, y + 1 + bob, 4, 2);
+    ctx.fillRect(x + 1, y + 1 + bob, 4, 2);
+
+    // body
+    ctx.fillStyle = c.shirt;
+    roundRect(x - 7, bodyY, 14, 12, 3, true);
+    // sleeves
+    ctx.fillRect(x - 9, bodyY + 2, 3, 7);
+    ctx.fillRect(x + 6, bodyY + 2, 3, 7);
+
+    // hands (skin)
+    ctx.fillStyle = c.skin;
+    ctx.beginPath(); ctx.arc(x - 7, bodyY + 9, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 7, bodyY + 9, 2, 0, Math.PI * 2); ctx.fill();
+
+    // hair back layer
+    ctx.fillStyle = c.hair;
+    if (c.facing === 'down' || c.facing === 'left' || c.facing === 'right') {
+      ctx.beginPath();
+      ctx.ellipse(x, headY + 4, 10, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // long hair side panels
+      ctx.fillRect(x - 10, headY + 2, 4, 12);
+      ctx.fillRect(x + 6, headY + 2, 4, 12);
+    } else {
+      // facing up: full back of head
+      ctx.beginPath();
+      ctx.ellipse(x, headY + 2, 9, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // head
+    ctx.fillStyle = c.skin;
+    ctx.beginPath();
+    ctx.ellipse(x, headY + 2, 7, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // hair front (bangs)
+    ctx.fillStyle = c.hair;
+    if (c.facing !== 'up') {
+      ctx.beginPath();
+      ctx.ellipse(x, headY - 2, 8, 5, 0, Math.PI, Math.PI * 2);
+      ctx.fill();
+      // a little fringe
+      ctx.fillRect(x - 6, headY - 2, 12, 3);
+    }
+
+    // eyes
+    if (c.facing !== 'up') {
+      ctx.fillStyle = '#1c1726';
+      let ex1 = x - 3, ex2 = x + 2, ey = headY + 2;
+      if (c.facing === 'left') { ex1 = x - 4; ex2 = x - 1; }
+      if (c.facing === 'right') { ex1 = x + 1; ex2 = x + 4; }
+      ctx.fillRect(ex1, ey, 1, 2);
+      ctx.fillRect(ex2, ey, 1, 2);
+      // little blush for cute
+      ctx.fillStyle = 'rgba(255,120,140,0.5)';
+      ctx.fillRect(x - 5, ey + 3, 2, 1);
+      ctx.fillRect(x + 4, ey + 3, 2, 1);
+    }
+
+    // sleeping z
+    if (c.using && c.using.action === 'sleep') {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px ui-rounded, system-ui, sans-serif';
+      ctx.fillText('z', x + 8, headY - 6 - (Math.sin(perfNow() / 300) * 2));
+      ctx.fillText('z', x + 12, headY - 12 - (Math.sin(perfNow() / 250) * 2));
+    }
+  }
+
+  function drawActiveRing(c) {
+    const t = perfNow() / 600;
+    ctx.strokeStyle = `rgba(255,209,102,${0.5 + 0.3 * Math.sin(t)})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(c.x | 0, (c.y + 2) | 0, 11, 4, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  function drawHeart(cx, cy, size, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    const s = size;
+    ctx.moveTo(cx, cy + s * 0.4);
+    ctx.bezierCurveTo(cx, cy - s * 0.2, cx - s, cy - s * 0.2, cx - s, cy + s * 0.1);
+    ctx.bezierCurveTo(cx - s, cy + s * 0.5, cx, cy + s * 0.9, cx, cy + s * 1.0);
+    ctx.bezierCurveTo(cx, cy + s * 0.9, cx + s, cy + s * 0.5, cx + s, cy + s * 0.1);
+    ctx.bezierCurveTo(cx + s, cy - s * 0.2, cx, cy - s * 0.2, cx, cy + s * 0.4);
+    ctx.fill();
+  }
+
+  function roundRect(x, y, w, h, r, fill) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    if (fill) ctx.fill(); else ctx.stroke();
+  }
+
+  function drawBubbles() {
+    // For each character, stack their active bubbles
+    chars.forEach((c, i) => {
+      const owned = bubbles.filter(b => b.ownerIdx === i);
+      let offset = 0;
+      owned.forEach((b, j) => {
+        const x = c.x;
+        const y = c.y - 36 - offset;
+        const fade = Math.min(1, b.ttl / 0.4);
+        ctx.globalAlpha = fade;
+        const text = b.text;
+        ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
+        const tw = ctx.measureText(text).width;
+        const padX = 8, padY = 5;
+        const bw = tw + padX * 2, bh = 18;
+        const bx = x - bw / 2, by = y - bh;
+
+        // bubble shape
+        const isVillain = b.tone === 'menacing';
+        const isLull = b.tone === 'soft';
+        const fillCol = isVillain ? '#3a0f1c' : (isLull ? '#fff7e0' : '#fff');
+        const textCol = isVillain ? '#ffb1c1' : '#1f1729';
+        const strokeCol = isVillain ? '#9c2c4e' : 'rgba(0,0,0,0.18)';
+
+        ctx.fillStyle = fillCol;
+        ctx.strokeStyle = strokeCol;
+        ctx.lineWidth = 1.5;
+        roundRect(bx, by, bw, bh, 8, true);
+        roundRect(bx, by, bw, bh, 8, false);
+        // tail
+        ctx.beginPath();
+        ctx.moveTo(x - 3, by + bh);
+        ctx.lineTo(x + 3, by + bh);
+        ctx.lineTo(x, by + bh + 5);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        ctx.fillStyle = textCol;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, bx + padX, by + bh / 2);
+        ctx.textBaseline = 'alphabetic';
+
+        offset += bh + 6;
+      });
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  // ------------------ HUD ------------------
+  function updateHud() {
+    const a = active();
+    document.getElementById('active-name').textContent = a.name + (a.using ? ' · ' + a.using.short : '');
+    document.getElementById('active-swatch').className = 'swatch ' + (activeIdx === 0 ? 'alex' : 'rose');
+    const r = roomAt(a.x, a.y);
+    document.getElementById('room-name').textContent = r ? r.name : '—';
+
+    // interact prompt
+    const promptEl = document.getElementById('prompt');
+    if (a.using) {
+      promptEl.classList.add('show');
+      promptEl.innerHTML = `<kbd>SPACE</kbd>get up`;
+    } else {
+      const f = nearestInteractable(a);
+      if (f) {
+        promptEl.classList.add('show');
+        promptEl.innerHTML = `<kbd>SPACE</kbd>${f.label}`;
+      } else {
+        promptEl.classList.remove('show');
+      }
+    }
+  }
+
+  // ------------------ title screen previews ------------------
+  function drawTitlePreview(canvasId, c) {
+    const cv = document.getElementById(canvasId);
+    const x = cv.getContext('2d');
+    x.clearRect(0, 0, cv.width, cv.height);
+    // Save real ctx, swap to preview ctx
+    const realCtx = ctx;
+    // We'll draw using simple inline calls
+    const ox = cv.width / 2, oy = cv.height - 18;
+    x.fillStyle = 'rgba(0,0,0,0.18)';
+    x.beginPath(); x.ellipse(ox, oy + 2, 14, 5, 0, 0, Math.PI * 2); x.fill();
+    x.fillStyle = c.pants; x.fillRect(ox - 7, oy - 10, 5, 12); x.fillRect(ox + 2, oy - 10, 5, 12);
+    x.fillStyle = c.shirt;
+    rr(x, ox - 11, oy - 22, 22, 18, 4);
+    x.fillStyle = c.hair;
+    x.beginPath(); x.ellipse(ox, oy - 36, 16, 18, 0, 0, Math.PI * 2); x.fill();
+    x.fillRect(ox - 16, oy - 36, 6, 22); x.fillRect(ox + 10, oy - 36, 6, 22);
+    x.fillStyle = c.skin;
+    x.beginPath(); x.ellipse(ox, oy - 36, 11, 13, 0, 0, Math.PI * 2); x.fill();
+    x.fillStyle = c.hair;
+    x.beginPath(); x.ellipse(ox, oy - 42, 12, 8, 0, Math.PI, Math.PI * 2); x.fill();
+    x.fillStyle = '#1c1726';
+    x.fillRect(ox - 4, oy - 36, 2, 3); x.fillRect(ox + 2, oy - 36, 2, 3);
+    x.fillStyle = 'rgba(255,120,140,0.6)';
+    x.fillRect(ox - 6, oy - 32, 3, 1); x.fillRect(ox + 3, oy - 32, 3, 1);
+  }
+  function rr(x, ax, ay, w, h, r) {
+    x.beginPath();
+    x.moveTo(ax + r, ay);
+    x.arcTo(ax + w, ay, ax + w, ay + h, r);
+    x.arcTo(ax + w, ay + h, ax, ay + h, r);
+    x.arcTo(ax, ay + h, ax, ay, r);
+    x.arcTo(ax, ay, ax + w, ay, r);
+    x.fill();
+  }
+  drawTitlePreview('t-alex', alex);
+  drawTitlePreview('t-rose', rose);
+
+  // ------------------ go ------------------
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
