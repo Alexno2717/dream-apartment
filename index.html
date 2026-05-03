@@ -86,19 +86,20 @@
   .hud-pill.build-active { background: rgba(255, 209, 102, 0.2); border-color: var(--accent); color: var(--accent); }
 
   #prompt {
-    position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%);
-    background: rgba(20,16,40,0.85);
-    border: 1px solid rgba(255,255,255,0.08);
+    position: absolute; left: 50%; top: 48px; transform: translateX(-50%) translateY(-4px);
+    background: rgba(20,16,40,0.88);
+    border: 1px solid rgba(255,255,255,0.1);
     color: var(--ink);
-    padding: 6px 13px; border-radius: 999px;
+    padding: 7px 14px; border-radius: 999px;
     font-size: 12px; font-weight: 600;
     pointer-events: none;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    opacity: 0; transition: opacity .15s ease;
-    white-space: nowrap;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0; transition: opacity .18s ease, transform .18s ease;
+    white-space: nowrap; max-width: 92%; overflow: hidden; text-overflow: ellipsis;
+    box-shadow: 0 8px 22px -10px rgba(0,0,0,0.5);
   }
-  #prompt.show { opacity: 1; }
+  #prompt.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   #prompt kbd {
     background: rgba(255,255,255,0.12);
     border-radius: 5px; padding: 1px 6px; font-size: 10px; font-weight: 700;
@@ -137,8 +138,13 @@
     transition: transform .05s, background .15s;
   }
   .abtn:active { transform: scale(0.92); background: rgba(255,209,102,0.3); }
-  .abtn.primary { background: rgba(255,209,102,0.85); color: #2a1a05; border-color: var(--accent); }
+  .abtn.primary {
+    background: rgba(255,209,102,0.92); color: #2a1a05; border-color: var(--accent);
+    box-shadow: 0 6px 18px -6px rgba(255,209,102,0.5);
+  }
   .abtn.tiny { font-size: 14px; }
+  .abtn[disabled] { opacity: 0.4; cursor: not-allowed; }
+  .abtn.danger { background: rgba(214,59,108,0.88); color: #fff; border-color: #c43365; }
 
   /* MODALS */
   .modal {
@@ -152,8 +158,15 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
     padding: 18px 18px 16px; max-width: 540px; width: 100%;
     line-height: 1.5; max-height: 90%; overflow-y: auto;
-    pointer-events: auto;
+    pointer-events: auto; position: relative;
   }
+  .modal-close {
+    position: absolute; top: 8px; right: 12px;
+    background: transparent; border: none;
+    color: var(--muted); font-size: 24px; line-height: 1; padding: 6px 10px;
+    cursor: pointer; transition: color .15s; font-family: inherit;
+  }
+  .modal-close:hover, .modal-close:active { color: var(--ink); }
   .modal h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
   .modal .sub { color: var(--muted); margin: 0 0 14px; font-size: 13px; }
   .modal table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -295,6 +308,7 @@
 
     <div class="modal" id="modal-help">
       <div class="modal-panel">
+        <button class="modal-close" data-close aria-label="close">×</button>
         <h2>how to play</h2>
         <p class="sub">tab between alex (blonde) and rose (dark hair). the one you're not playing wanders around as an npc.</p>
         <table>
@@ -315,6 +329,7 @@
 
     <div class="modal" id="modal-wardrobe">
       <div class="modal-panel">
+        <button class="modal-close" data-close aria-label="close">×</button>
         <h2>👗 wardrobe</h2>
         <p class="sub">pick what alex and rose look like. saves automatically.</p>
         <div class="wardrobe-grid" id="wardrobe-grid"></div>
@@ -324,6 +339,7 @@
 
     <div class="modal" id="modal-shop">
       <div class="modal-panel">
+        <button class="modal-close" data-close aria-label="close">×</button>
         <h2>🛒 furniture shop</h2>
         <p class="sub">spend hearts on new stuff. you have <span id="shop-hearts">0</span> ♥</p>
         <div class="cat-grid" id="cat-grid"></div>
@@ -427,6 +443,10 @@
   ];
 
   let furniture = saved?.furniture ? saved.furniture.map(o => ({...o})) : DEFAULT_FURNITURE.map(o => ({...o}));
+  // Always make sure the anniversary banner is present (added even if saved state predates it)
+  if (!furniture.find(f => f.id === 'banner-6mo')) {
+    furniture.push({ id: 'banner-6mo', kind: 'banner', x: 304, y: 6, w: 432, h: 32, decor: true, text: 'happy 6 months ♥', persistent: true });
+  }
   function refreshSolids() { furniture.forEach(f => f.solid = !f.decor); }
   refreshSolids();
 
@@ -517,9 +537,10 @@
     return true;
   }
 
-  // BUBBLES
+  // BUBBLES — only one visible per character at a time (newer replaces older)
   const bubbles = [];
   function bubble(ownerIdx, text, ttl = 2.6, tone = 'neutral') {
+    for (let i = bubbles.length - 1; i >= 0; i--) if (bubbles[i].ownerIdx === ownerIdx) bubbles.splice(i, 1);
     bubbles.push({ ownerIdx, text, ttl, totalTtl: ttl, tone });
   }
 
@@ -1013,6 +1034,14 @@
       if (keyEdge['k']) tryKiss();
       if (keyEdge['b']) toggleBuild();
       if (keyEdge['r']) rotateHeld();
+      if (buildMode && (keyEdge['delete'] || keyEdge['backspace']) && heldFurniture && !heldFurniture.persistent) {
+        const f = heldFurniture;
+        const idx = furniture.indexOf(f);
+        if (idx >= 0) furniture.splice(idx, 1);
+        heldFurniture = null;
+        bubble(activeIdx, 'deleted', 1.4);
+        persistDebounced();
+      }
       if (keyEdge['escape']) { closeAllModals(); if (buildMode && heldFurniture) heldFurniture = null; }
 
       playerUpdate(active(), dt);
@@ -1232,6 +1261,50 @@
       rr(c, 0, f.h - 22, f.w, 22, 8);
       rr(c, 4, 0, f.w - 8, Math.max(8, f.h - 22), 4);
     },
+    banner(c, f, full) {
+      const text = full?.text || 'happy 6 months ♥';
+      // string sag
+      c.strokeStyle = 'rgba(60,40,30,0.5)'; c.lineWidth = 1.2;
+      c.beginPath();
+      c.moveTo(2, 4);
+      c.bezierCurveTo(f.w * 0.3, 12, f.w * 0.7, 12, f.w - 2, 4);
+      c.stroke();
+      // triangular flags
+      const flagW = 22, gap = 4;
+      const totalFlags = Math.max(8, Math.floor((f.w - 8) / (flagW + gap)));
+      const pal = ['#ff8aa8','#ffd166','#6cdac6','#a3a8ff','#ef9aa6','#fef3d3'];
+      for (let i = 0; i < totalFlags; i++) {
+        const px = 4 + i * (flagW + gap);
+        // sag offset
+        const t = i / Math.max(1, totalFlags - 1);
+        const yTop = 4 + Math.sin(t * Math.PI) * 8;
+        c.fillStyle = pal[i % pal.length];
+        c.beginPath();
+        c.moveTo(px, yTop);
+        c.lineTo(px + flagW, yTop);
+        c.lineTo(px + flagW / 2, yTop + 14);
+        c.closePath();
+        c.fill();
+      }
+      // sign plate centered
+      const signW = Math.min(f.w - 40, 200), signH = 18;
+      const sx = (f.w - signW) / 2, sy = f.h - signH - 1;
+      c.fillStyle = '#fff7e0';
+      rr(c, sx, sy, signW, signH, 5);
+      c.strokeStyle = '#d6a26b'; c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(sx + 0.5, sy + 0.5);
+      c.lineTo(sx + signW - 0.5, sy + 0.5);
+      c.lineTo(sx + signW - 0.5, sy + signH - 0.5);
+      c.lineTo(sx + 0.5, sy + signH - 0.5);
+      c.closePath();
+      c.stroke();
+      c.fillStyle = '#d63b6c';
+      c.font = 'bold 11px ui-rounded, system-ui, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(text, f.w / 2, sy + signH / 2 + 1);
+      c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    },
   };
 
   function rr(c, x, y, w, h, r) {
@@ -1418,6 +1491,8 @@
   drawTitlePreview('t-rose', rose);
 
   setHearts(totalHearts);
+  // Skip title screen for returning users (anyone who already has saved state)
+  if (saved) hideTitle();
   requestAnimationFrame(loop);
 })();
 </script>
