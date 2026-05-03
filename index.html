@@ -266,7 +266,7 @@
   // x,y,w,h in pixels. interact provides the action label & callback.
   const furniture = [
     // BEDROOM
-    { id: 'bed',      kind: 'bed',     x: 48,  y: 64,  w: 96, h: 128, label: 'cuddle in bed',  short: 'sleep',  action: 'sleep',  bothBoost: 6 },
+    { id: 'bed',      kind: 'bed',     x: 48,  y: 64,  w: 96, h: 128, label: 'woohoo in bed',  short: 'sleep',  action: 'sleep',  bothBoost: 6 },
     { id: 'dresser',  kind: 'dresser', x: 160, y: 48,  w: 64, h: 32,  label: 'change outfit',  short: 'dress',  action: 'dress' },
     { id: 'rug-bed',  kind: 'rug',     x: 32,  y: 152, w: 192, h: 24, decor: true },
     { id: 'lamp-bed', kind: 'lamp',    x: 192, y: 96,  w: 24, h: 24,  label: 'flick lamp',     short: 'lamp',   action: 'lamp', solidOverride: false },
@@ -279,7 +279,7 @@
     { id: 'rug-bal',  kind: 'rug-bal', x: 504, y: 88,  w: 168, h: 64, decor: true },
 
     // LIVING ROOM
-    { id: 'sofa',     kind: 'sofa',    x: 304, y: 224, w: 192, h: 64,  label: 'cuddle on sofa', short: 'sit',    action: 'sit',  bothBoost: 4 },
+    { id: 'sofa',     kind: 'sofa',    x: 304, y: 224, w: 192, h: 64,  label: 'woohoo on sofa', short: 'sit',    action: 'sit',  bothBoost: 4 },
     { id: 'coffee',   kind: 'coffee',  x: 352, y: 312, w: 96, h: 36,   label: 'flip a magazine', short: 'read',  action: 'read' },
     { id: 'tv',       kind: 'tv',      x: 608, y: 192, w: 96, h: 36,   label: 'watch tv',        short: 'tv',    action: 'tv' },
     { id: 'rug-liv',  kind: 'rug-liv', x: 320, y: 224, w: 256, h: 144, decor: true },
@@ -327,7 +327,7 @@
 
   const alex = makeChar({
     name: 'Alex',
-    x: 4 * TILE, y: 3 * TILE,
+    x: 200, y: 130,
     hair: '#e9c66a', hairAccent: '#c79f48',
     shirt: '#6cdac6', pants: '#3a4252', skin: '#ffd9b8',
     song: 'lullaby',
@@ -336,7 +336,7 @@
 
   const rose = makeChar({
     name: 'Rose',
-    x: 6 * TILE, y: 3 * TILE,
+    x: 232, y: 130,
     hair: '#3b1d2c', hairAccent: '#21111a',
     shirt: '#ff8aa8', pants: '#2a253a', skin: '#fbd0bd',
     song: 'villain',
@@ -474,7 +474,7 @@
     titleScreenVisible = false;
     titleEl.classList.add('hidden');
   }
-  document.getElementById('enter-btn').addEventListener('click', hideTitle);
+  document.getElementById('enter-btn').addEventListener('click', (e) => { hideTitle(); if (e.target && e.target.blur) e.target.blur(); });
 
   // ------------------ interaction proximity ------------------
   function nearestInteractable(c) {
@@ -538,7 +538,9 @@
     // both characters using same furniture with bothBoost
     if (f.bothBoost && otherCharIs(c, f)) {
       addHearts(f.bothBoost);
-      spawnHearts(f.x + f.w / 2, f.y - 4, f.bothBoost, '#ff5f8a');
+      spawnHearts(f.x + f.w / 2, f.y - 4, f.bothBoost + 2, '#ff5f8a');
+      bubble(0, 'woohoo!', 1.8);
+      bubble(1, 'woohoo!', 1.8);
     }
   }
   function onUseEnd(c, f) {}
@@ -555,13 +557,17 @@
 
   function pickInterest(c) {
     const candidates = furniture.filter(f => f.solid && f.label && interestKinds.includes(f.kind));
-    // prefer furniture in different room than active player half the time
     const choice = candidates[(Math.random() * candidates.length) | 0];
-    return {
-      x: choice.x + choice.w / 2,
-      y: choice.y + choice.h + 6, // approach from south
-      furniture: choice,
-    };
+    const sides = [
+      { x: choice.x + choice.w / 2, y: choice.y + choice.h + 12 },
+      { x: choice.x + choice.w + 12, y: choice.y + choice.h / 2 },
+      { x: choice.x - 12,            y: choice.y + choice.h / 2 },
+      { x: choice.x + choice.w / 2,  y: choice.y - 12 },
+    ];
+    for (const s of sides) {
+      if (!collidesAt(s.x, s.y, c)) return { x: s.x, y: s.y, furniture: choice };
+    }
+    return { x: choice.x + choice.w / 2, y: choice.y + choice.h + 12, furniture: choice };
   }
 
   function npcUpdate(c, dt) {
