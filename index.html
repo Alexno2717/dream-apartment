@@ -400,7 +400,7 @@
   const roomAt = (px, py) => rooms.find(r => px >= r.x && px < r.x + r.w && py >= r.y && py < r.y + r.h) || null;
 
   // SAVE/LOAD
-  const STORAGE = 'apt_state_v2';
+  const STORAGE = 'apt_state_v3';
   function loadSave() { try { return JSON.parse(localStorage.getItem(STORAGE) || 'null'); } catch { return null; } }
   function persist() {
     const data = {
@@ -426,6 +426,7 @@
     { id: 'bal-chair',kind: 'chair',   x: 528, y: 96,  w: 36, h: 44,  label: 'lounge outside', short: 'lounge', action: 'lounge' },
     { id: 'bal-table',kind: 'side-table', x: 576, y: 104, w: 28, h: 28, label: 'sip drink',    short: 'sip',    action: 'sip' },
     { id: 'rug-bal',  kind: 'rug-bal', x: 504, y: 88,  w: 168, h: 64, decor: true },
+    { id: 'shrine',   kind: 'shrine',  x: 408, y: 96,  w: 40, h: 48,  label: 'remember Monica', short: 'monica', action: 'remember' },
     { id: 'sofa',     kind: 'sofa',    x: 304, y: 224, w: 192, h: 64,  label: 'woohoo on sofa', short: 'sit',    action: 'sit',  bothBoost: 4 },
     { id: 'coffee',   kind: 'coffee',  x: 352, y: 312, w: 96, h: 36,   label: 'flip a magazine', short: 'read',  action: 'read' },
     { id: 'tv',       kind: 'tv',      x: 608, y: 192, w: 96, h: 36,   label: 'watch tv',        short: 'tv',    action: 'tv' },
@@ -497,6 +498,15 @@
   const npc = () => chars[1 - activeIdx];
   const charIdx = c => c === alex ? 0 : 1;
   const otherChar = c => c === alex ? rose : alex;
+
+  // MEEKO — tabby grey, dark stripes, black face/legs, white chest, yellow eyes
+  const meeko = {
+    name: 'Meeko',
+    x: 520, y: 380, facing: 'down',
+    walking: false, walkPhase: 0,
+    target: null, cooldown: 1, sitTimer: 0,
+    purrTimer: 0,
+  };
 
   // HEARTS
   let totalHearts = saved?.hearts ?? 0;
@@ -804,6 +814,37 @@
     }
   }
 
+  // MEEKO AI
+  function meekoUpdate(dt) {
+    meeko.purrTimer = Math.max(0, meeko.purrTimer - dt);
+    if (meeko.sitTimer > 0) { meeko.sitTimer -= dt; meeko.walking = false; return; }
+    if (!meeko.target) {
+      meeko.cooldown -= dt;
+      if (meeko.cooldown <= 0) {
+        for (let i = 0; i < 12; i++) {
+          const x = 32 + Math.random() * (W - 64);
+          const y = 32 + Math.random() * (H - 64);
+          if (!collidesAt(x, y)) { meeko.target = { x, y }; break; }
+        }
+        meeko.cooldown = 0;
+      }
+      meeko.walking = false; return;
+    }
+    const dx = meeko.target.x - meeko.x, dy = meeko.target.y - meeko.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 5) { meeko.target = null; meeko.sitTimer = 1.2 + Math.random() * 3.5; meeko.walking = false; return; }
+    const speed = 55;
+    const nx = meeko.x + (dx / dist) * speed * dt;
+    const ny = meeko.y + (dy / dist) * speed * dt;
+    let moved = false;
+    if (!collidesAt(nx, meeko.y)) { meeko.x = nx; moved = true; }
+    if (!collidesAt(meeko.x, ny)) { meeko.y = ny; moved = true; }
+    if (!moved) { meeko.target = null; meeko.cooldown = 0.4; }
+    meeko.walking = true; meeko.walkPhase += dt * 11;
+    if (Math.abs(dx) > Math.abs(dy)) meeko.facing = dx > 0 ? 'right' : 'left';
+    else meeko.facing = dy > 0 ? 'down' : 'up';
+  }
+
   // PLAYER
   function playerUpdate(c, dt) {
     if (c.using) {
@@ -1046,6 +1087,7 @@
 
       playerUpdate(active(), dt);
       if (!buildMode) npcUpdate(npc(), dt);
+      if (!buildMode) meekoUpdate(dt);
       updateProximity(dt);
 
       chars.forEach(c => {
@@ -1096,6 +1138,7 @@
     const sortable = [];
     furniture.filter(f => !f.decor).forEach(f => sortable.push({ y: f.y + f.h, draw: () => drawFurnitureAt(ctx, f, f.x, f.y, 1) }));
     chars.forEach(c => sortable.push({ y: c.y, draw: () => drawCharAt(ctx, c, c.x, c.y, 1) }));
+    sortable.push({ y: meeko.y, draw: () => drawMeekoAt(ctx, meeko.x, meeko.y) });
     sortable.sort((a, b) => a.y - b.y);
     sortable.forEach(s => s.draw());
 
@@ -1155,6 +1198,37 @@
       c.fillStyle = '#fde0a4'; rr(c, f.w / 2 + 3, 8, Math.max(8, (f.w - 18) / 2), 22, 4);
       c.fillStyle = '#cd7d96'; c.fillRect(0, Math.max(0, f.h - 56), f.w, Math.min(50, f.h - 8));
       drawHeartAt(c, f.w / 2, f.h - 30, 8, '#ec567f');
+    },
+    shrine(c, f) {
+      // base / altar
+      c.fillStyle = '#a98260'; rr(c, 0, f.h - 14, f.w, 14, 3);
+      c.fillStyle = '#7c5734'; c.fillRect(2, f.h - 13, f.w - 4, 2);
+      // photo frame
+      c.fillStyle = '#dcb15c'; rr(c, 6, 4, f.w - 12, f.h - 22, 3);
+      c.fillStyle = '#fff7e0'; c.fillRect(9, 7, f.w - 18, f.h - 28);
+      // tiny monica silhouette (smaller meeko-ish)
+      const cx = f.w / 2, cy = f.h - 24;
+      c.fillStyle = '#7d7873'; rr(c, cx - 5, cy - 2, 10, 6, 2);
+      c.fillStyle = '#5a554f'; c.fillRect(cx - 4, cy - 1, 1, 5); c.fillRect(cx + 1, cy - 1, 1, 5);
+      c.fillStyle = '#fff'; c.fillRect(cx - 2, cy + 1, 4, 2);
+      c.fillStyle = '#2a242a';
+      c.beginPath(); c.arc(cx + 4, cy - 3, 2.5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#1a1620';
+      c.beginPath(); c.moveTo(cx + 2, cy - 5); c.lineTo(cx + 3.5, cy - 7); c.lineTo(cx + 5, cy - 5); c.fill();
+      c.beginPath(); c.moveTo(cx + 4, cy - 5); c.lineTo(cx + 5.5, cy - 7); c.lineTo(cx + 7, cy - 5); c.fill();
+      // candle
+      c.fillStyle = '#fff7e0'; c.fillRect(2, f.h - 22, 4, 8);
+      const t = performance.now() / 200;
+      c.fillStyle = '#ffd166';
+      c.beginPath(); c.ellipse(4, f.h - 24 + Math.sin(t) * 0.5, 2, 3, 0, 0, Math.PI * 2); c.fill();
+      c.fillStyle = 'rgba(255, 200, 100, 0.25)';
+      c.beginPath(); c.arc(4, f.h - 24, 8, 0, Math.PI * 2); c.fill();
+      drawHeartAt(c, cx, f.h - 14, 3, '#ff5f8a');
+      // flowers
+      c.fillStyle = '#ff8aa8';
+      c.beginPath(); c.arc(f.w - 6, f.h - 4, 2, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#caa6ff';
+      c.beginPath(); c.arc(f.w - 10, f.h - 3, 1.5, 0, Math.PI * 2); c.fill();
     },
     dresser(c, f) {
       c.fillStyle = '#9c7148'; rr(c, 0, 0, f.w, f.h, 4);
@@ -1334,6 +1408,66 @@
     c.fill();
   }
   function drawHeart(cx, cy, s, color) { drawHeartAt(ctx, cx, cy, s, color); }
+
+  // Meeko: tabby grey, dark stripes, black face/legs, white chest
+  function drawMeekoAt(c, mx, my) {
+    const x = mx | 0, y = my | 0;
+    const bob = meeko.walking ? Math.sin(meeko.walkPhase) * 0.6 : 0;
+    const isLeft = meeko.facing === 'left';
+    const isRight = meeko.facing === 'right';
+    const isDown = meeko.facing === 'down';
+    const isUp = meeko.facing === 'up';
+    const hx = x + (isLeft ? -7 : isRight ? 7 : 0);
+    const hy = y - 7 + bob;
+    // shadow
+    c.fillStyle = 'rgba(0,0,0,0.18)';
+    c.beginPath(); c.ellipse(x, y + 1, 9, 3, 0, 0, Math.PI * 2); c.fill();
+    // body — tabby grey
+    c.fillStyle = '#8a8580';
+    rr(c, x - 8, y - 8 + bob, 16, 9, 4);
+    // dark stripes
+    c.fillStyle = '#5a554f';
+    for (let i = 0; i < 3; i++) c.fillRect(x - 6 + i * 5, y - 7 + bob, 1, 7);
+    // white chest
+    c.fillStyle = '#fff';
+    if (isDown) rr(c, x - 3, y - 3 + bob, 6, 4, 2);
+    else if (isLeft) rr(c, x - 7, y - 4 + bob, 5, 5, 2);
+    else if (isRight) rr(c, x + 2, y - 4 + bob, 5, 5, 2);
+    // black legs
+    c.fillStyle = '#1a1620';
+    c.fillRect(x - 7, y - 1 + bob, 2, 2);
+    c.fillRect(x + 5, y - 1 + bob, 2, 2);
+    // tail (curls when sitting)
+    c.fillStyle = '#5a554f';
+    if (meeko.walking) c.fillRect(x + (isLeft ? 7 : -11), y - 9 + bob, 4, 2);
+    else { c.beginPath(); c.arc(x + (isLeft ? 8 : -8), y - 8 + bob, 4, 0, Math.PI * 2); c.fill(); }
+    // black head
+    c.fillStyle = isUp ? '#3a3540' : '#2a242a';
+    c.beginPath(); c.arc(hx, hy, 5, 0, Math.PI * 2); c.fill();
+    // ears
+    c.fillStyle = '#1a1620';
+    c.beginPath(); c.moveTo(hx - 4, hy - 3); c.lineTo(hx - 2, hy - 7); c.lineTo(hx, hy - 3); c.fill();
+    c.beginPath(); c.moveTo(hx + 1, hy - 3); c.lineTo(hx + 3, hy - 7); c.lineTo(hx + 5, hy - 3); c.fill();
+    c.fillStyle = '#ff8aa8';
+    c.fillRect(hx - 2, hy - 5, 1, 2); c.fillRect(hx + 2, hy - 5, 1, 2);
+    // yellow eyes + pink nose
+    if (!isUp) {
+      c.fillStyle = '#e0c46a';
+      if (isDown) { c.fillRect(hx - 3, hy - 1, 1, 2); c.fillRect(hx + 2, hy - 1, 1, 2); }
+      else if (isLeft) { c.fillRect(hx - 4, hy - 1, 1, 2); c.fillRect(hx - 1, hy - 1, 1, 2); }
+      else if (isRight) { c.fillRect(hx + 1, hy - 1, 1, 2); c.fillRect(hx + 4, hy - 1, 1, 2); }
+      c.fillStyle = '#ff8aa8';
+      c.fillRect(hx, hy + 1, 1, 1);
+    }
+    // purr ♪ when petted
+    if (meeko.purrTimer > 0) {
+      c.fillStyle = '#ff8aa8';
+      c.font = 'bold 10px ui-rounded, system-ui, sans-serif';
+      const t = performance.now();
+      c.fillText('♪', x + 6, y - 14 - (Math.sin(t / 250) * 2));
+      c.fillText('♪', x + 11, y - 18 - (Math.sin(t / 200) * 2));
+    }
+  }
 
   function drawCharAt(c, ch, x, y, scale) {
     c.save();
