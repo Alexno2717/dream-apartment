@@ -700,6 +700,17 @@
       const d = Math.hypot(ex, ey);
       if (d < bestDist) { bestDist = d; best = f; }
     }
+    // Meeko is also pettable
+    if (typeof meeko !== 'undefined') {
+      const mw = 16, mh = 12;
+      const mx = meeko.x - mw / 2, my = meeko.y - mh;
+      const ex = Math.max(0, Math.abs(c.x - (mx + mw / 2)) - mw / 2);
+      const ey = Math.max(0, Math.abs(c.y - (my + mh / 2)) - mh / 2);
+      const d = Math.hypot(ex, ey);
+      if (d < bestDist) {
+        best = { id: 'meeko', kind: 'meeko-pet', x: mx, y: my, w: mw, h: mh, label: 'pet Meeko', short: 'pet', action: 'pet-meeko' };
+      }
+    }
     return best;
   }
   function startUsing(c, f) {
@@ -719,6 +730,20 @@
       bath:'bath time', pee:'brb', dress:'outfit change', lamp:'click',
     }[f.action];
     if (tip) bubble(i, tip, 1.7);
+    if (f.action === 'pet-meeko') {
+      const lines = ['hi meeko ♥', "who's a good kitty", 'soft floof', 'meeko ♪', '*scritches*'];
+      bubble(i, lines[(Math.random() * lines.length) | 0], 1.8);
+      meeko.purrTimer = 3.5;
+      meeko.sitTimer = Math.max(meeko.sitTimer, 2.5);
+      spawnHearts(meeko.x, meeko.y - 18, 3, '#ff8aa8');
+      setTimeout(() => { if (c.using === f) stopUsing(c); }, 100);
+    }
+    if (f.action === 'remember') {
+      const lines = ['miss you, monica', 'forever loved ♥', '*lights candle*', 'tiny tabby angel'];
+      bubble(i, lines[(Math.random() * lines.length) | 0], 2.4);
+      spawnHearts(f.x + f.w / 2, f.y - 4, 4, '#caa6ff');
+      addHearts(1);
+    }
     if (c === alex && f.action === 'sleep') setTimeout(() => { if (c.using === f) singSong('lullaby', i); }, 600);
     if (c === rose && f.action === 'gaze')  setTimeout(() => { if (c.using === f) singSong('villain', i); }, 500);
     if (f.bothBoost && otherChar(c).using === f) {
