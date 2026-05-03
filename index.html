@@ -144,9 +144,113 @@
 
   footer { color: var(--muted); font-size: 11px; margin-top: 12px; opacity: 0.6; }
 
+  /* Build mode + catalogue */
+  #build-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 280px;
+    background: rgba(20,16,40,0.95); border-left: 1px solid var(--line);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transform: translateX(100%); transition: transform .25s ease;
+    display: flex; flex-direction: column; color: var(--ink);
+    z-index: 10;
+  }
+  #build-panel.show { transform: translateX(0); }
+  .build-head {
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .build-head h3 { margin: 0; font-size: 16px; }
+  .build-head .close-x {
+    background: transparent; color: var(--muted); border: none;
+    font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1;
+  }
+  .build-tabs { display: flex; gap: 2px; padding: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .build-tabs button {
+    background: rgba(255,255,255,0.05); color: var(--muted);
+    border: none; border-radius: 7px; padding: 6px 9px;
+    font: inherit; font-size: 11px; font-weight: 700; cursor: pointer;
+  }
+  .build-tabs button.active { background: var(--accent); color: #2a1a05; }
+  .build-list {
+    flex: 1; overflow-y: auto; padding: 10px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .build-item {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 6px; text-align: center;
+    cursor: pointer; transition: background .12s ease, border-color .12s ease, transform .05s ease;
+  }
+  .build-item:active { transform: scale(0.97); }
+  .build-item:hover { background: rgba(255,255,255,0.08); border-color: var(--accent); }
+  .build-item.locked { opacity: 0.45; cursor: not-allowed; }
+  .build-item canvas { display: block; margin: 0 auto 4px; image-rendering: pixelated; }
+  .build-item .name { font-size: 11px; font-weight: 700; }
+  .build-item .cost { font-size: 10px; color: var(--accent); margin-top: 2px; }
+  .build-foot {
+    padding: 10px 12px; border-top: 1px solid var(--line);
+    font-size: 12px; color: var(--muted); line-height: 1.45;
+  }
+  .build-foot .pip { color: var(--pink); font-weight: 700; }
+
+  /* Build mode banner */
+  #build-banner {
+    position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #2a1a05;
+    padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    display: none; z-index: 9; box-shadow: 0 4px 16px -4px rgba(255, 209, 102, 0.4);
+  }
+  #build-banner.show { display: block; }
+  #build-banner button {
+    background: rgba(0,0,0,0.15); color: #2a1a05; border: none;
+    padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;
+    margin-left: 8px; cursor: pointer;
+  }
+
+  /* Mobile controls */
+  #touch-controls {
+    display: none; margin-top: 10px; width: 100%; max-width: 800px;
+    grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 8px;
+    align-items: end;
+  }
+  #dpad {
+    display: grid; grid-template-columns: 56px 56px 56px; grid-template-rows: 56px 56px 56px;
+    gap: 4px; justify-content: start;
+  }
+  #dpad .slot { background: transparent; }
+  #dpad button {
+    background: rgba(255,255,255,0.10); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 12px;
+    font-size: 22px; cursor: pointer; touch-action: none;
+    user-select: none; -webkit-user-select: none;
+  }
+  #dpad button:active, #dpad button.pressed { background: var(--accent); color: #2a1a05; }
+  #action-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  }
+  #action-grid button {
+    background: rgba(255,255,255,0.10); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 6px; font: inherit; font-weight: 700; font-size: 12px; cursor: pointer;
+    touch-action: manipulation;
+  }
+  #action-grid button.primary { background: var(--accent); color: #2a1a05; }
+  #action-grid button.pink { background: var(--pink); color: #2a0e15; }
+  #action-grid button:active { transform: scale(0.96); }
+
+  @media (hover: none) and (pointer: coarse) {
+    #touch-controls { display: grid; }
+  }
+  body.show-touch #touch-controls { display: grid; }
+
   @media (max-width: 820px) {
     #stage { width: 100%; }
     #titlebar .brand small { display: none; }
+    #build-panel { width: 240px; }
+    #help .panel { max-height: 80vh; overflow-y: auto; }
+  }
+  @media (max-width: 600px) {
+    #build-panel { width: 100%; }
+    #dpad { grid-template-columns: 50px 50px 50px; grid-template-rows: 50px 50px 50px; }
+    #action-grid button { padding: 10px 4px; font-size: 11px; }
   }
 </style>
 </head>
@@ -198,8 +302,42 @@
           <div class="who"><canvas id="t-rose" width="80" height="100"></canvas><div class="name">Rose</div></div>
         </div>
         <button id="enter-btn">enter the apartment</button>
-        <div class="hint">arrows / wasd to walk · tab to swap who you control</div>
+        <div class="hint">arrows / wasd or buttons below · tab to swap who you control</div>
       </div>
+    </div>
+
+    <div id="build-banner">
+      <span id="build-banner-text">build mode</span>
+      <button id="build-banner-exit">exit</button>
+    </div>
+
+    <div id="build-panel">
+      <div class="build-head">
+        <h3>catalogue</h3>
+        <button class="close-x" id="build-close">×</button>
+      </div>
+      <div class="build-tabs" id="build-tabs"></div>
+      <div class="build-list" id="build-list"></div>
+      <div class="build-foot">
+        <span class="pip">♥ <span id="build-hearts">0</span></span> ·
+        tap an item to buy and place it. tap existing furniture to move or delete.
+      </div>
+    </div>
+  </div>
+
+  <div id="touch-controls">
+    <div id="dpad">
+      <div class="slot"></div><button data-tk="arrowup">▲</button><div class="slot"></div>
+      <button data-tk="arrowleft">◀</button><div class="slot"></div><button data-tk="arrowright">▶</button>
+      <div class="slot"></div><button data-tk="arrowdown">▼</button><div class="slot"></div>
+    </div>
+    <div id="action-grid">
+      <button class="primary" data-tap=" ">act</button>
+      <button data-tap="tab">swap</button>
+      <button data-tap="m">sing</button>
+      <button class="pink" data-tap="k">kiss</button>
+      <button data-tap="q">quote</button>
+      <button data-tap="b">build</button>
     </div>
   </div>
 
@@ -295,7 +433,7 @@
     { id: 'bath',     kind: 'bath',    x: 32,  y: 480, w: 112, h: 64, label: 'take a bath',       short: 'bath',  action: 'bath' },
     { id: 'mirror',   kind: 'mirror',  x: 168, y: 432, w: 56, h: 16,  label: 'look in mirror',    short: 'gaze',  action: 'gaze', solidOverride: false },
     { id: 'sink-b',   kind: 'sink-b',  x: 168, y: 448, w: 56, h: 32,  label: 'splash water',      short: 'wash',  action: 'wash' },
-    { id: 'toilet',   kind: 'toilet',  x: 232, y: 488, w: 32, h: 40,  label: 'pee real quick',    short: 'go',    action: 'pee' },
+    { id: 'toilet',   kind: 'toilet',  x: 200, y: 504, w: 32, h: 40,  label: 'pee real quick',    short: 'go',    action: 'pee' },
     { id: 'rug-bath', kind: 'rug-bath',x: 32,  y: 552, w: 128, h: 16, decor: true },
   ];
 
@@ -388,6 +526,40 @@
       tone: 'menacing',
     },
   };
+
+  // ------------------ ambient sayings ------------------
+  const SAYINGS = {
+    alex: [
+      'I love swimming',
+      'interesting',
+      'autism things',
+      'Claude',
+      '*blinks intensely*',
+      'I love Rose she is amazing and I miss her so much that I created this game',
+    ],
+    rose: [
+      'so real so true',
+      'I love hockey',
+      'I love stakeholder engagements',
+      'I love frameworks',
+      'I love capsicum',
+      'I love alex she is the absolute best',
+      'bum pimples',
+    ],
+  };
+
+  function sayRandom(c) {
+    const i = charIdx(c);
+    if (bubbles.some(b => b.ownerIdx === i)) return false;
+    const list = c === alex ? SAYINGS.alex : SAYINGS.rose;
+    let s, tries = 0;
+    do { s = list[(Math.random() * list.length) | 0]; tries++; } while (s === c.lastSaying && tries < 5);
+    c.lastSaying = s;
+    const ttl = Math.max(2.4, Math.min(6.0, s.length * 0.07));
+    bubble(i, s, ttl);
+    return true;
+  }
+  let proximityTimer = 0;
 
   // ------------------ bubbles (speech) ------------------
   // Each bubble: { ownerIdx, text, ttl, totalTtl, tone }
@@ -707,6 +879,21 @@
         const c = active();
         singSong(c.song, charIdx(c));
       }
+      // Q → say a random classic line
+      if (keyEdge['q']) sayRandom(active());
+      // K → kiss the other one if close
+      if (keyEdge['k']) {
+        const a = active(), o = a === alex ? rose : alex;
+        const dx = a.x - o.x, dy = a.y - o.y;
+        if (Math.hypot(dx, dy) < 32) {
+          bubble(charIdx(a), '*kiss*', 1.5);
+          bubble(charIdx(o), '♥', 1.3);
+          spawnHearts((a.x + o.x) / 2, (a.y + o.y) / 2 - 24, 8, '#ff5f8a');
+          addHearts(3);
+        } else {
+          bubble(charIdx(a), 'too far :(', 1.4);
+        }
+      }
       // Heart bomb (cheesy gesture)
       if (keyEdge['h']) {
         const c = active(), o = c === alex ? rose : alex;
@@ -732,10 +919,29 @@
         const p = particles[i];
         p.x += p.vx * dt;
         p.y += p.vy * dt;
-        p.vy += 20 * dt; // float up then drift
+        p.vy += 20 * dt;
         p.ttl -= dt;
         if (p.ttl <= 0) particles.splice(i, 1);
       }
+      // sayings every ~10s per character
+      chars.forEach((c) => {
+        if (c._sayTimer === undefined) c._sayTimer = 4 + Math.random() * 4;
+        c._sayTimer -= dt;
+        if (c._sayTimer <= 0) {
+          if (sayRandom(c)) c._sayTimer = 8 + Math.random() * 5;
+          else c._sayTimer = 1.5;
+        }
+      });
+      // proximity affection
+      const _pdx = alex.x - rose.x, _pdy = alex.y - rose.y;
+      if (Math.hypot(_pdx, _pdy) < 24 && !alex.using && !rose.using) {
+        proximityTimer += dt;
+        if (proximityTimer > 1.6) {
+          proximityTimer = 0;
+          addHearts(1);
+          spawnHearts((alex.x + rose.x) / 2, (alex.y + rose.y) / 2 - 26, 2, '#ff8aa8');
+        }
+      } else proximityTimer = 0;
     }
 
     keyEdge = {};
@@ -1166,48 +1372,62 @@
     if (fill) ctx.fill(); else ctx.stroke();
   }
 
+  function wrapText(text, maxW) {
+    const words = text.split(/\s+/);
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(test).width <= maxW) cur = test;
+      else { if (cur) lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
   function drawBubbles() {
-    // For each character, stack their active bubbles
+    const MAX_W = 180;
     chars.forEach((c, i) => {
       const owned = bubbles.filter(b => b.ownerIdx === i);
       let offset = 0;
-      owned.forEach((b, j) => {
-        const x = c.x;
-        const y = c.y - 36 - offset;
+      owned.forEach((b) => {
+        const isAction = b.text.startsWith('*') && b.text.endsWith('*') && b.text.length > 2;
+        const text = isAction ? b.text.slice(1, -1) : b.text;
+        const fontSpec = (isAction ? 'italic ' : '') + '600 12px ui-rounded, system-ui, sans-serif';
+        ctx.font = fontSpec;
+        const lines = wrapText(text, MAX_W);
+        let maxW = 0;
+        lines.forEach(l => maxW = Math.max(maxW, ctx.measureText(l).width));
+        const padX = 8, padY = 6, lineH = 14;
+        const bw = Math.max(40, maxW + padX * 2);
+        const bh = padY * 2 + lineH * lines.length;
+        const x = c.x, y = c.y - 36 - offset;
+        const bx = x - bw / 2, by = y - bh;
         const fade = Math.min(1, b.ttl / 0.4);
         ctx.globalAlpha = fade;
-        const text = b.text;
-        ctx.font = '600 12px ui-rounded, system-ui, sans-serif';
-        const tw = ctx.measureText(text).width;
-        const padX = 8, padY = 5;
-        const bw = tw + padX * 2, bh = 18;
-        const bx = x - bw / 2, by = y - bh;
-
-        // bubble shape
         const isVillain = b.tone === 'menacing';
         const isLull = b.tone === 'soft';
         const fillCol = isVillain ? '#3a0f1c' : (isLull ? '#fff7e0' : '#fff');
         const textCol = isVillain ? '#ffb1c1' : '#1f1729';
         const strokeCol = isVillain ? '#9c2c4e' : 'rgba(0,0,0,0.18)';
-
         ctx.fillStyle = fillCol;
         ctx.strokeStyle = strokeCol;
         ctx.lineWidth = 1.5;
         roundRect(bx, by, bw, bh, 8, true);
         roundRect(bx, by, bw, bh, 8, false);
-        // tail
         ctx.beginPath();
         ctx.moveTo(x - 3, by + bh);
         ctx.lineTo(x + 3, by + bh);
         ctx.lineTo(x, by + bh + 5);
         ctx.closePath();
         ctx.fill(); ctx.stroke();
-
         ctx.fillStyle = textCol;
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, bx + padX, by + bh / 2);
+        ctx.textBaseline = 'top';
+        ctx.font = fontSpec;
+        lines.forEach((line, li) => {
+          ctx.fillText(line, bx + padX, by + padY + li * lineH);
+        });
         ctx.textBaseline = 'alphabetic';
-
         offset += bh + 6;
       });
       ctx.globalAlpha = 1;
