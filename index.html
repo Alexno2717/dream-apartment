@@ -1087,8 +1087,11 @@
       ctx.stroke();
     });
 
-    furniture.filter(f => f.decor).forEach(f => drawFurnitureAt(ctx, f, f.x, f.y, 1));
+    // floor-level decor (rugs)
+    furniture.filter(f => f.decor && f.kind !== 'banner').forEach(f => drawFurnitureAt(ctx, f, f.x, f.y, 1));
     drawWalls();
+    // wall-mounted decor (banners) — drawn after walls so they sit on top
+    furniture.filter(f => f.kind === 'banner').forEach(f => drawFurnitureAt(ctx, f, f.x, f.y, 1));
 
     const sortable = [];
     furniture.filter(f => !f.decor).forEach(f => sortable.push({ y: f.y + f.h, draw: () => drawFurnitureAt(ctx, f, f.x, f.y, 1) }));
@@ -1491,8 +1494,6 @@
   drawTitlePreview('t-rose', rose);
 
   setHearts(totalHearts);
-  // Skip title screen for returning users (anyone who already has saved state)
-  if (saved) hideTitle();
   requestAnimationFrame(loop);
 })();
 </script>
